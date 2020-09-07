@@ -43,6 +43,7 @@ Additionally the `~/<>/kubespray/inventory/mycluster/hosts.yaml` needed to have 
 
 kubectl was installed using snap and I couldn't figure out where to copy the admin.conf file so that it would read it. So instead add add `export KUBECONFIG=/home/ubuntu/.kube/admin.conf` to your `~/.bashrc` so that running `kubectl get nodes` will be successful. 
 
+Modifying the cluster: https://github.com/kubernetes-sigs/kubespray/blob/master/docs/nodes.md
 ```
 ansible-playbook -i inventory/mycluster/hosts.yaml --become --become-user=root cluster.yml
 ansible-playbook -e node=node4 -i inventory/mycluster/hosts.yaml --become --become-user=root remove-node.ym
