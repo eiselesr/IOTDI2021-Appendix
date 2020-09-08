@@ -34,7 +34,8 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-lib = CDLL(os.path.join("/home/dev/projects/MODiCuM-Streaming/app/libdarknet.so"), RTLD_GLOBAL)
+lib = CDLL(os.path.join("/libdarknet.so"), RTLD_GLOBAL)
+# lib = CDLL(os.path.join("/home/dev/projects/MODiCuM-Streaming/app/libdarknet.so"), RTLD_GLOBAL)
 # lib = CDLL(os.path.join("/home/dev/projects/3rdParty/darknet-pj/libdarknet.so"), RTLD_GLOBAL)
 # lib = CDLL(os.path.join("/home/dev/projects/3rdParty/darknet/libdarknet.so"), RTLD_GLOBAL)
 #lib = CDLL(os.path.join("/home/dev/projects/EdgeTrafficAnalytics/libdarknet.so"), RTLD_GLOBAL)
