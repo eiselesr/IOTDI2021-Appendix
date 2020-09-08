@@ -35,6 +35,7 @@ git clone https://github.com/scope-lab-vu/MODiCuM-Streaming.git
 ```
 
 Video source file: https://vanderbilt.app.box.com/file/217581007445?s=l9onxj3r7acb9zx7ig9ts3ztytvc83rl
+if /usr/bin/python fails: https://www.toptechskills.com/ansible-tutorials-courses/how-to-fix-usr-bin-python-not-found-error-tutorial/
 
 Follow this video https://www.youtube.com/watch?v=CJ5G4GpqDy0&t=635s tutorial to set up kubernetes cluster.
 Its easiest if the username on all the machines is the same, I used `ubuntu`.
