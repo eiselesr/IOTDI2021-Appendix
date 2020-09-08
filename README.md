@@ -50,3 +50,5 @@ ansible-playbook -e node=node4 -i inventory/mycluster/hosts.yaml --become --beco
 ansible-playbook  -i inventory/mycluster/hosts.yaml --become --become-user=root facts.yml
 ansible-playbook --limit=node4 -i inventory/mycluster/hosts.yaml --become --become-user=root scale.yml
 ```
+
+docker container had no internet: https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/
