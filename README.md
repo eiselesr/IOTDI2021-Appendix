@@ -53,3 +53,8 @@ ansible-playbook --limit=node4 -i inventory/mycluster/hosts.yaml --become --beco
 ```
 
 docker container had no internet: https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/
+
+test setup (specifically the network): https://github.com/kubernetes-sigs/kubespray/blob/master/docs/setting-up-your-first-cluster.md
+
+
+
