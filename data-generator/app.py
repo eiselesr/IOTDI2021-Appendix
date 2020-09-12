@@ -4,6 +4,32 @@ import time
 import requests
 import json
 
+def create_tenant(pulsar_admin_url=None, tenant=None):
+    # create tenant
+    r = requests.put("{}/tenants/{}".format(pulsar_admin_url, tenant),
+                     data=json.dumps({"allowedClusters": ["standalone"]}),
+                     headers={'Content-Type': "application/json", 'Accept': "application/json"})
+
+    if r.status_code == 409:
+        print("tenant already exists")
+    elif (r.status_code == 400) or (r.status_code == 204):
+        print("new tenant created: {}".format(tenant))
+    else:
+        print("unknown error: {}, {}".format(r.status_code, r.content))
+        quit()
+
+
+def create_namespace(pulsar_admin_url=None, tenant=None, namespace=None):
+    # create tenant
+    r = requests.put("{}/namespaces/{}/{}".format(pulsar_admin_url, tenant, namespace))
+
+    if r.status_code == 409:
+        print("namespace already exists")
+    elif (r.status_code == 400) or (r.status_code == 204):
+        print("new namespace created: {}/{}".format(tenant, namespace))
+    else:
+        print("unknown error: {}, {}".format(r.status_code, r.content))
+        quit()
 
 def main(pulsar_url="pulsar://localhost:6650",
          pulsar_admin_url="http://localhost:8080/admin/v2",
@@ -13,14 +39,10 @@ def main(pulsar_url="pulsar://localhost:6650",
          message_rate_s=1):
 
     # create tenant
-    r = requests.put("{}/tenants/{}".format(pulsar_admin_url, tenant),
-                     data=json.dumps({"allowedClusters": ["standalone"]}),
-                     headers={'Content-Type': "application/json", 'Accept': "application/json"})
+    create_tenant(pulsar_admin_url=pulsar_admin_url, tenant=tenant)
 
-    if r.status_code == 409:
-        print("tenant already exists")
-    elif (r.status_code == 400) or (r.status_code == 204):
-        print("new tenant created")
+    # create namespace
+    create_namespace(pulsar_admin_url=pulsar_admin_url, tenant=tenant, namespace=namespace)
 
     # create producer and run application
 

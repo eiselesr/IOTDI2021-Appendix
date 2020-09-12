@@ -65,3 +65,12 @@ Getting Dashboard to work
 * TODO https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#deploying-containerized-applications
 
 
+Note from Mike: Remove all docker containers and images 
+```bash
+# Delete every Docker containers
+# Must be run first because images are attached to containers
+docker rm -f $(docker ps -a -q)
+
+# Delete every Docker image
+docker rmi -f $(docker images -q)
+```
