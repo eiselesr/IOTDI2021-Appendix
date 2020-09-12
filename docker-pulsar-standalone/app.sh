@@ -1,6 +1,8 @@
 #!/bin/bash
+NAME=${PWD##*/}
+docker network create my-net
 
-docker run -it \
+docker run -it --rm --name $NAME --network my-net \
   -p 6650:6650 \
   -p 8080:8080 \
   --mount source=pulsardata,target=/pulsar/data \
