@@ -62,6 +62,7 @@ Getting Dashboard to work
 * `wget https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml`. Then replace 'namespace: dashboard-kubernetes` with 'namespace: kube-system' because it needs to be in the same namespace to see the nodes. (This may be wrong, and only the token needs to be in the right namespace)
 * replace namespace again: https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
 * use kubectl port forwarding https://github.com/kubernetes/dashboard/tree/master/docs/user/accessing-dashboard#kubectl-port-forward
+    * `kubectl port-forward -n kube-system  service/kubernetes-dashboard 8080:443`
 * TODO https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#deploying-containerized-applications
 
 
