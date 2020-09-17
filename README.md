@@ -50,7 +50,7 @@ Tips for setting up Kubernetes cluster:
 
 Setting up Kubernetes cluster:
 
-* Follow this video tutorial https://www.youtube.com/watch?v=CJ5G4GpqDy0&t=635s or this guide https://github.com/kubernetes-sigs/kubespray/blob/master/docs/setting-up-your-first-cluster.md to set up kubernetes cluster.
+* Follow this video tutorial https://www.youtube.com/watch?v=CJ5G4GpqDy0&t=635s or this guide https://github.com/kubernetes-sigs/kubespray/blob/master/docs/setting-up-your-first-cluster.md or this one https://kubespray.io/#/ to set up kubernetes cluster.
 
 
 
