@@ -103,6 +103,7 @@ EOF
 ```
 
 Note from Mike: Remove all docker containers and images 
+
 Note from Scott: Don't do this on nodes managed by kubernetes
 ```bash
 # Delete every Docker containers
