@@ -77,7 +77,8 @@ Getting Dashboard to work
 
 Create token for accessing dashboard. 
 
-```cat <<EOF | kubectl apply -f -
+```
+cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
