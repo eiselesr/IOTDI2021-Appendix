@@ -77,7 +77,7 @@ Getting Dashboard to work
 
 Create token for accessing dashboard. 
 
-cat <<EOF | kubectl apply -f -
+```cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -99,7 +99,7 @@ subjects:
   name: admin-user
   namespace: kube-system
 EOF
-
+```
 
 Note from Mike: Remove all docker containers and images 
 Note from Scott: Don't do this on nodes managed by kubernetes
