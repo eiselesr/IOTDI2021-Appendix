@@ -52,6 +52,30 @@ Setting up Kubernetes cluster:
 
 * Follow this video tutorial https://www.youtube.com/watch?v=CJ5G4GpqDy0&t=635s or this guide https://github.com/kubernetes-sigs/kubespray/blob/master/docs/setting-up-your-first-cluster.md or this one https://kubespray.io/#/ to set up kubernetes cluster.
 
+1. copy public key to `~/.ssh/authoized_keys` on remote nodes; `ssh-copy-id -i [identity file] [user]@ip
+1. modify `/etc/sudoers` file on targets to add line `ubuntu ALL=(ALL:ALL) NOPASSWD: ALL` so we don't need sudo access
+1. `cp -rfp inventory/sample inventory/mycluster`
+1. save target ips to environment variable `declare -a IPS=(192.168.222.111 192.168.222.101 192.168.222.102 192.168.222.103 192.168.222.104)`
+1. create `[kubespray]/inventory/mycluster/hosts.yaml `CONFIG_FILE=inventory/mycluster/hosts.yaml python3 contrib/inventory_builder/inventory.py ${IPS[@]}`
+1. modify each instance of "node1, node2, etc" in `[kubespray]/inventory/mycluster/hosts.yaml` to match hostname of target machines, or else it will rename the hosts to node1, node2, etc.
+1. `[kubespray]/inventory/mycluster/group_vars/k8s-cluster/addons.yml` uncomment `metrics_server_enabled: true`
+1. `[kubespray]/inventory/mycluster/group_vars/k8s-cluster/k8s-cluster.yml` uncomment and set to true `kubeconfig_localhost: true`
+1. `ansible-playbook -i inventory/mycluster/hosts.yaml -u $USERNAME -b --become --become-user=root -v --private-key=~/.ssh/id_rsa cluster.yml`
+1. `ansible-playbook -i inventory/mycluster/hosts.yaml  --private-key=~/.ssh/isislab -u ubuntu  --become --become-user=root cluster.yml`
+1. edit `~/.bashrc` to add `export KUBECONFIG=/home/ubuntu/.kube/admin.conf`
+1. `cp [kubespray]/inventory/isislab/mycluster/admin.conf ~/.kube/`
+1. `kubectl get nodes` (might have to open new shell session... or reboot(?) for .`bashrc` to take efftect.
+1. `kubectl -n kube-system  get services`
+1. `kubectl top nodes` check that metric collection is working
+1. `kubectl get namespaces` doesn't modity anything just for satisfying curiosity
+
+For dashboard try these:
+1. `kubectl port-forward -n kube-system  service/kubernetes-dashboard 8080:443`
+1. `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login`
+1. create a sample user https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
+    1. replace every occurance of `kubernetes-dashboard` with `kube-system`
+1. paste token into login
+
 
 
 
@@ -101,6 +125,7 @@ subjects:
   namespace: kube-system
 EOF
 ```
+`kubectl -n kube-system describe secret $(kubectl -n kube-system  get secret | grep admin-user | awk '{print $1}')`
 
 Note from Mike: Remove all docker containers and images 
 
@@ -112,4 +137,10 @@ docker rm -f $(docker ps -a -q)
 
 # Delete every Docker image
 docker rmi -f $(docker images -q)
+```
+
+
+ERRORS
+```
+fatal: [isislab21 -> 129.59.234.231]: FAILED! => {"attempts": 4, "changed": true, "cmd": ["/usr/bin/docker", "pull", "docker.io/calico/node:v3.15.2"], "delta": "0:00:00.366135", "end": "2020-09-17 20:46:03.241613", "msg": "non-zero return code", "rc": 1, "start": "2020-09-17 20:46:02.875478", "stderr": "Error response from daemon: Get https://registry-1.docker.io/v2/calico/node/manifests/v3.15.2: unauthorized: incorrect username or password", "stderr_lines": ["Error response from daemon: Get https://registry-1.docker.io/v2/calico/node/manifests/v3.15.2: unauthorized: incorrect username or password"], "stdout": "", "stdout_lines": []}
 ```
