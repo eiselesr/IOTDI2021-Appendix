@@ -71,6 +71,7 @@ Setting up Kubernetes cluster:
 
 For dashboard try these:
 1. `kubectl port-forward -n kube-system  service/kubernetes-dashboard 8080:443`
+    1. https://github.com/kubernetes/dashboard/blob/master/docs/user/accessing-dashboard/README.md
 1. `http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#!/login` 
     1. format recommended by this link, other foramts didn't work https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
 1. create a sample user https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md
