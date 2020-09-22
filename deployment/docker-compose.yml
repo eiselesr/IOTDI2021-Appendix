@@ -1,0 +1,24 @@
+version: "3.7"
+services:
+  pulsar:
+    image: apachepulsar/pulsar:2.6.1
+    command: bin/pulsar standalone
+    volumes:
+      - type: volume
+        source: pulsardata
+        target: /pulsar/data
+      - type: volume
+        source: pulsarconf
+        target: /pulsar/conf
+      - type: bind
+        source: ./shared
+        target: /shared
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+volumes:
+  pulsardata:
+  pulsarconf:
