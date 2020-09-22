@@ -208,6 +208,11 @@ class yolo_py_consumer(ConsumerBase):
     def detect(self, net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
         im = load_image(image, 0, 0)
 
+        print("image var is: {}".format(image))
+        print("image type is: {}".format(type(im)))
+        print("im.data is: {}".format(im.data))
+        print("type(im.data) is: {}".format(type(im.data)))
+
         # print(im.w)
         # print(im.h)
 
