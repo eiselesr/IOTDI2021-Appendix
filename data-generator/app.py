@@ -10,6 +10,8 @@ def create_tenant(pulsar_admin_url=None, tenant=None):
                      data=json.dumps({"allowedClusters": ["standalone"]}),
                      headers={'Content-Type': "application/json", 'Accept': "application/json"})
 
+    print(r.request.url)
+    print(r.request.body)
     if r.status_code == 409:
         print("tenant already exists")
     elif (r.status_code == 400) or (r.status_code == 204):

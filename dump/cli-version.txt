@@ -1,0 +1,19 @@
+POST /admin/v3/functions/public/default/reverse HTTP/1.1
+content-length: 670
+content-type: multipart/form-data; boundary=nVatqNsT6k4qNLKZQveIFsBksAyhaz8dvZHZEgy
+host: localhost:8081
+accept: */*
+user-agent: Pulsar-Java-v2.6.1
+
+--nVatqNsT6k4qNLKZQveIFsBksAyhaz8dvZHZEgy
+Content-Disposition: form-data; name="functionConfig"
+Content-Type: application/json; charset=UTF-8
+
+{"tenant":"public","namespace":"default","name":"reverse","className":"reverse","inputs":["persistent://public/default/backwards"],"output":"persistent://public/default/forwards","outputSchemaType":"","forwardSourceMessageProperty":true,"userConfig":{},"py":"/shared/reverse.py"}
+--nVatqNsT6k4qNLKZQveIFsBksAyhaz8dvZHZEgy
+Content-Disposition: form-data; name="data"; filename="reverse.py"
+Content-Type: application/octet-stream
+
+def process(input):
+    return input[::-1]
+--nVatqNsT6k4qNLKZQveIFsBksAyhaz8dvZHZEgy--

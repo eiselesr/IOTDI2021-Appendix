@@ -1,5 +1,12 @@
 # MODiCuM outsourcing online computation to surplus resources
 
+insatll MV2
+
+https://github.com/yngvem/python-project-structure/#editable-installs
+```
+sudo pip3 install -e .
+```
+
 Prerequisites
 
 Docker: https://docs.docker.com/engine/install/ubuntu/#installation-methods

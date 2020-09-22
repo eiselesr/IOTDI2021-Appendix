@@ -1,0 +1,21 @@
+POST /admin/v3/functions/public/default/reverse HTTP/1.1
+Host: localhost:8081
+User-Agent: python-requests/2.22.0
+Accept-Encoding: gzip, deflate
+Accept: */*
+Connection: keep-alive
+Content-Type: multipart/form-data; boundary=c20020bc74e3488a9b67b71a144bc7ac
+Content-Length: 653
+
+--c20020bc74e3488a9b67b71a144bc7ac
+Content-Disposition: form-data; name="functionConfig"
+Content-Type: application/json
+
+{"tenant": "public", "namespace": "default", "name": "reverse", "className": "reverse", "inputs": ["persistent://public/default/backwards"], "output": "persistent://public/default/forwards", "outputSchemaType": "", "forwardSourceMessageProperty": true, "userConfig": {}, "py": "/shared/reverse.py"}
+--c20020bc74e3488a9b67b71a144bc7ac
+Content-Disposition: form-data; name="data"; filename="reverse.py"
+Content-Type: application/octet-stream
+
+def process(input):
+    return input[::-1]
+--c20020bc74e3488a9b67b71a144bc7ac--

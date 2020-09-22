@@ -6,10 +6,16 @@ RUN apt-get update \
 
 RUN pip3 install opencv-python
 
-COPY  detect.py yolo_sort.py ConsumerBase.py yolov3.weights libdarknet.so  ./
+WORKDIR "/"
+
 COPY cfg ./cfg
 COPY data ./data
 
-WORKDIR "/"
+COPY  ConsumerBase.py yolov3.weights libdarknet.so  ./
+
+COPY  detect.py yolo_sort.py ./
+
+
+
 CMD ["python3", "./detect.py"]
 #CMD ["/bin/bash"]
