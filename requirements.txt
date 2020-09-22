@@ -1,1 +1,2 @@
-pip3 install opencv-python
+requests
+pulsar-client
