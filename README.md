@@ -154,3 +154,9 @@ ERRORS
 fatal: [isislab21 -> 129.59.234.231]: FAILED! => {"attempts": 4, "changed": true, "cmd": ["/usr/bin/docker", "pull", "docker.io/calico/node:v3.15.2"], "delta": "0:00:00.366135", "end": "2020-09-17 20:46:03.241613", "msg": "non-zero return code", "rc": 1, "start": "2020-09-17 20:46:02.875478", "stderr": "Error response from daemon: Get https://registry-1.docker.io/v2/calico/node/manifests/v3.15.2: unauthorized: incorrect username or password", "stderr_lines": ["Error response from daemon: Get https://registry-1.docker.io/v2/calico/node/manifests/v3.15.2: unauthorized: incorrect username or password"], "stdout": "", "stdout_lines": []}
 ```
 Solution was to run `sudo docker logout` on `isislab21`
+
+
+Links about schemas
+* https://pulsar.apache.org/docs/en/schema-understand/
+* https://pulsar.apache.org/docs/en/client-libraries-python/#declare-and-validate-schema
+* https://pulsar.apache.org/api/python/2.6.0-SNAPSHOT/
