@@ -1,3 +1,17 @@
+
+
+
+COF:
+	docker-compose exec pulsar \
+	bin/pulsar-admin functions create \
+	--py /shared/custom_object_function.py \
+	--classname custom_object_function.CustomObjectFunction \
+	--custom-serde-inputs '{"backwards":custom_object_function.CustomSerDe}' \
+	--output persistent://public/default/forwards \
+	--tenant public \
+	--namespace default \
+	--name cof
+
 reverse:
 	docker-compose exec pulsar \
 	bin/pulsar-admin functions create \
@@ -25,9 +39,25 @@ trigger2:
 	--namespace default \
 	--trigger-value "sdrawrof won si tub sdrawkcab saw gnirts sihT"
 
+triggerCOF:
+	docker-compose exec pulsar \
+	bin/pulsar-admin functions trigger \
+	--name cof \
+	--tenant public \
+	--namespace default \
+	--trigger-value "sdrawrof won si tub sdrawkcab saw gnirts sihT"
+
 delete:
 	docker-compose exec pulsar \
 	bin/pulsar-admin functions delete \
 	--tenant public \
 	--namespace default \
 	--name ReadInput
+
+
+deleteCOF:
+	docker-compose exec pulsar \
+	bin/pulsar-admin functions delete \
+	--tenant public \
+	--namespace default \
+	--name cof

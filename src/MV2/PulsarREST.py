@@ -97,6 +97,53 @@ def create_function(api_url: str, config: dict, function_path: str):
     print(response.reason)
     print(response.content)
 
+def update_function(api_url: str, config: dict, function_path: str):
+    """
+    :param api_url: f"http://localhost:8080/admin/v3/functions/public/default/reverse"
+    :param config: config = {"tenant": "public",
+                             "namespace": "default",
+                             "name": "reverse",
+                             "className": "reverse",
+                             "inputs": ["persistent://public/default/backwards"],
+                             "output": "persistent://public/default/forwards",
+                             "outputSchemaType": "",
+                             "forwardSourceMessageProperty": True,
+                             "userConfig": {},
+                             "py": "/shared/reverse.py"}
+                   config = {"tenant": str,
+                             "namespace": str,
+                             "name": str,
+                             "className": str,
+                             "inputs": list,
+                             "output": str,
+                             "outputSchemaType": "",
+                             "forwardSourceMessageProperty": bool,
+                             "userConfig": dict,
+                             "py": str}
+    :param function_path: "/home/ubuntu/projects/MODiCuM-Streaming/deployment/shared/reverse.py
+    :return:
+    """
+
+    file = open(function_path, 'rb')
+    mp_encoder = MultipartEncoder(
+        fields={
+            'functionConfig': (None, json.dumps(config), 'application/json'),
+            'data': (f"{config['name']}.py", file, 'application/octet-stream')
+        }
+    )
+
+    headers = {'Content-Type': mp_encoder.content_type, 'user-agent': 'Pulsar-Java-v2.6.1'}
+
+    print(mp_encoder)
+    print(mp_encoder.content_type)
+    print(api_url)
+    print(headers)
+
+    response = requests.put(api_url, data=mp_encoder, headers=headers)
+
+    print(response.reason)
+    print(response.content)
+
 
 if __name__ == "__main__":
 

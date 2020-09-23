@@ -1,7 +1,13 @@
-import pulsar
+from pulsar import Function, SerDe
 
 
-class BytesSerDe(pulsar.SerDe):
+# class MyObject(object):
+#     def __init__(self):
+#         self.a = 0
+#         self.b = 0
+
+
+class CustomSerDe(SerDe):
     def __init__(self):
         pass
 
@@ -17,20 +23,16 @@ class BytesSerDe(pulsar.SerDe):
         # retval.b = int(split[1])
         # return retval
 
-class ReadInput(pulsar.Function):
+
+# Function that deals with custom objects
+class CustomObjectFunction(Function):
     def __init__(self):
         pass
 
     def process(self, input, context):
-        # return input[::-1]
         logger = context.get_logger()
-
-        try:
-            logger.warn("this doesn't break")
-            return input
-        except AttributeError as e:
-            logger.warn("Context: {}".format(context.__dict__))
-            logger.warn("type(input): {}".format(type(input)))
-            logger.warn("This is error 2: {}".format(e))
-            return "This is error 2: {}".format(e)
-
+        return type(input)
+        # retval = MyObject()
+        # retval.a = input.a + 11
+        # retval.b = input.b + 24
+        # return retval

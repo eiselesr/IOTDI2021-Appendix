@@ -1,0 +1,27 @@
+[2020-09-23 01:12:42 +0000] [WARNING] ReadInput.py: Context: {'instance_config': InstanceConfig(instance_id='0', function_id='7da6d0d7-ee99-4913-9213-bba2246e5cd9', function_version='a3dec258-b218-4c9d-85f4-aed01412e409', function_details=tenant: "public"
+namespace: "default"
+name: "ReadInput"
+className: "ReadInput.ReadInput"
+runtime: PYTHON
+autoAck: true
+parallelism: 1
+source {
+  inputSpecs {
+    key: "persistent://public/default/fubar"
+    value {
+    }
+  }
+  cleanupSubscription: true
+}
+sink {
+  topic: "persistent://public/default/frobaz"
+  forwardSourceMessageProperty: true
+}
+resources {
+  cpu: 1.0
+  ram: 1073741824
+  disk: 10737418240
+}
+componentType: FUNCTION
+, max_buffered_tuples=1024), 'stats': <function_stats.Stats object at 0x7f97a100f9d0>, 'publish_producers': {}, 'log': <logging.RootLogger object at 0x7f97a37fbcd0>, 'consumers': {u'persistent://public/default/fubar': <pulsar.Consumer instance at 0x7f97a0fd4f80>}, 'secrets_provider': <secretsprovider.ClearTextSecretsProvider instance at 0x7f97a102b128>, 'secrets_map': {}, 'current_start_time': 1600823562.704873, 'user_config': [], 'publish_serializers': {}, 'user_metrics_map': {}, 'user_metrics_summary': prometheus_client.metrics.Summary(pulsar_function_user_metric), 'user_code_dir': '/pulsar/download/pulsar_functions/public/default/ReadInput/0', 'metrics_labels': [u'public', u'public/default', u'ReadInput', '0', 'standalone', u'public/default/ReadInput'], 'pulsar_client': <pulsar.Client instance at 0x7f97a1024fc8>, 'message': <pulsar.Message instance at 0x7f97a0740128>, 'state_context': <state_context.BKManagedStateContext object at 0x7f97a0ffadd0>}
+[2020-09-23 01:12:42 +0000] [WARNING] ReadInput.py: topic: persistent://public/default/fubar reverse:This string was backwards but is now forwards

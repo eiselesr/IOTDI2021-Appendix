@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geth-deployment
+  labels:
+    app: geth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geth
+  template:
+    metadata:
+      labels:
+        app: geth
+    spec:
+      containers:
+        - name: geth
+          image: ethereum/client-go:stable
+          imagePullPolicy: IfNotPresent
+
+          command: ["/bin/sh"]
+          args:
+            - "--datadir /data/eth"
+            - "--ethash.dagdir /data/ethash"
+            - "--rpc --rpcaddr 0.0.0.0 --rpcport 10000 --rpcapi 'eth,web3,net' --rpc.gascap 100"
+            - "--mine --miner.threads=1 --miner.etherbase=0 --miner.gastarget=2000000000"
+            - "--networkid 15 --nousb --nodiscover"
+            - "--password /data/geth-config/password.txt --allow-insecure-unlock --unlock 0"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - name: rpc
+              containerPort: 10000
+            - name: discovery
+              containerPort: 30303
+              protocol: UDP
+
+
