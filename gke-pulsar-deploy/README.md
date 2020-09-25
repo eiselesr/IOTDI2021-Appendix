@@ -3,6 +3,9 @@
 This  actually was really easy. I just followed this tutorial https://cloud.google.com/sdk/docs/quickstart
 
 ## 2. Create a Kubernetes cluster on Google Cloud
+
+docs: https://github.com/streamnative/charts
+
 ```bash
 cd <MODiCuM-Streaming>/gke-pulsar-deploy
 git clone https://github.com/streamnative/charts.git
@@ -11,6 +14,9 @@ PROJECT=modicum scripts/pulsar/gke_bootstrap_script.sh up
 ```
 
 ## 3. Install Pulsar on the Cluster
+
+docs: https://github.com/streamnative/charts
+
 ```bash
 cd <MODiCuM-Streaming>/gke-pulsar-deploy
 helm repo add streamnative https://charts.streamnative.io
