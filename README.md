@@ -1,5 +1,15 @@
 # MODiCuM outsourcing online computation to surplus resources
 
+These are the classes that need to be dockerized. 
+I've been running them using `test.py` to run them, so either these will need something added to main to make them runnable, or the docker container will need a script to start them. The customer and supplier will need to generate offers. We can talk if you have questions.
+- src
+    - MV2
+        - `allocator.py`
+        - `customer.py`
+        - `supplier.py`
+        - `verifier.py`
+
+
 insatll MV2
 
 https://github.com/yngvem/python-project-structure/#editable-installs
@@ -160,3 +170,9 @@ Links about schemas
 * https://pulsar.apache.org/docs/en/schema-understand/
 * https://pulsar.apache.org/docs/en/client-libraries-python/#declare-and-validate-schema
 * https://pulsar.apache.org/api/python/2.6.0-SNAPSHOT/
+* https://github.com/apache/pulsar/blob/master/pulsar-functions/python-examples/custom_object_function.py
+* pulsar.schema.schema.BytesSchema
+* https://pulsar.apache.org/api/python/2.6.0-SNAPSHOT/functions/function.m.html
+* https://pulsar.apache.org/api/python/2.6.0-SNAPSHOT/functions/serde.m.html
+* https://pulsar.apache.org/api/python/2.6.0-SNAPSHOT/functions/context.m.html
+* https://pulsar.apache.org/api/python/
