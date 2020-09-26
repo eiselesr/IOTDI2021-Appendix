@@ -3,6 +3,46 @@ import json
 from requests_toolbelt import MultipartEncoder
 
 
+def create_tenant(pulsar_admin_url=None, tenant=None):
+    # create tenant
+    r = requests.put("{}/tenants/{}".format(pulsar_admin_url, tenant),
+                     data=json.dumps({"allowedClusters": ["standalone"]}),
+                     headers={'Content-Type': "application/json", 'Accept': "application/json"})
+
+    print(r.request.url)
+    print(r.request.body)
+    if (r.status_code == 400) or (r.status_code == 204):
+        print("new tenant created: {}".format(tenant))
+    elif r.status_code == 403:
+        print("{}: The requester doesn't have admin permissions".format(r.status_code))
+    elif r.status_code == 409:
+        print("409: Tenant already exists")
+    elif (r.status_code == 412):
+        print("412: Clusters do not exist: {}")
+    else:
+        print("unknown error: {}, {}".format(r.status_code, r.content))
+        quit()
+
+
+def create_namespace(pulsar_admin_url=None, tenant=None, namespace=None):
+    # create tenant
+    r = requests.put("{}/namespaces/{}/{}".format(pulsar_admin_url, tenant, namespace))
+
+
+    if (r.status_code == 400) or (r.status_code == 204):
+        print("new namespace created: {}/{}".format(tenant, namespace))
+    elif r.status_code == 403:
+        print("{}: Don't have admin permission".format(r.status_code))
+    elif r.status_code == 404:
+        print("{}: Tenant or cluster doesn't exist".format(r.status_code))
+    elif r.status_code == 409:
+        print("{}: namespace already exists".format(r.status_code))
+    elif r.status_code == 412:
+        print("{}: Namespace name is not valid".format(r.status_code))
+    else:
+        print("unknown error: {}, {}".format(r.status_code, r.content))
+        quit()
+
 def get_functions():
 
     api = "http://localhost:8080/admin/v3/functions/public/default"

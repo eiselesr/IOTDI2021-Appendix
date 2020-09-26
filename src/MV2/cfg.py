@@ -1,0 +1,5 @@
+pulsar_url="pulsar://localhost:6650"
+pulsar_admin_url="http://localhost:8080/admin/v2"
+function_api = "http://localhost:8080/admin/v3/functions"
+tenant = "public"
+namespace = "default"
