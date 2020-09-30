@@ -34,3 +34,5 @@ kubectl get service -n pulsar
 PROJECT=modicum scripts/pulsar/gke_bootstrap_script.sh down
 kubectl get namespace
 ```
+
+Cube control port forwarding.
