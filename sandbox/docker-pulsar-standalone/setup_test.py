@@ -14,7 +14,7 @@ consumer = client.subscribe('my-topic',
                             initial_position=pulsar.InitialPosition.Earliest)
 
 count = 0
-while (count <= 10):
+while (count <= 9):
     try:
         msg = consumer.receive(timeout_millis=60000)
         print("Received message: '%s'" % msg.data().decode("utf-8"))
