@@ -50,8 +50,8 @@ class Trader:
             service = input.value().service_name
             print(service)
             PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service)
-            service_input = "persistent://{}/{}/{}".format(self.tenant, service, "input")
-            service_output = "persistent://{}/{}/{}".format(self.tenant, service, "output")
+            service_input = "persistent://{}/{}/input{}".format(self.tenant, service, input.value().uuid)
+            service_output = "persistent://{}/{}/output{}".format(self.tenant, service, input.value().uuid)
             producer = self.client.create_producer(topic=service_output)
 
             print("{}: DO THE JOB".format(self.tenant))

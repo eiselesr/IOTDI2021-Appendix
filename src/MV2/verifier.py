@@ -5,7 +5,7 @@ import schema
 
 class Verifier:
     def __init__(self, tenant):
-        self.received_messages = []
+        self.received_results = []
         self.tenant = tenant
         self.client = pulsar.Client(cfg.pulsar_url)
 
@@ -24,6 +24,7 @@ class Verifier:
     def result_listener(self, consumer, msg):
         consumer.acknowledge(msg)
         print("verifier:{} topic:{} value:{}".format(self.tenant, msg.topic_name(), msg.value()))
+        self.received_results[service][msg_id]
         # print(msg.properties())
         # print(msg.message_id())
 
@@ -44,5 +45,7 @@ class Verifier:
                                   initial_position=pulsar.InitialPosition.Earliest,
                                   consumer_type=pulsar.ConsumerType.Exclusive,
                                   message_listener=self.result_listener)
+
+        self.received_results[allocation] = []
 
 
