@@ -1,4 +1,5 @@
 import re
+import uuid
 import datetime
 import pulsar
 import PulsarREST
@@ -44,18 +45,19 @@ class Allocator:
             customer = self.customer_offers.pop()
             suppliers = []
             if len(self.supplier_offers) >= customer.replicas:
-                self.aid += 1
+                self.seqnum += 1
                 for i in range(customer.replicas):
                     supplier = self.supplier_offers.pop()
                     suppliers.append(supplier.user)
                 allocation = schema.AllocationSchema(
-                    aid=self.aid,
+                    seqnum=self.seqnum,
                     customer=customer.user,
                     suppliers=suppliers,
                     start=customer.start,
                     end=customer.end,
                     service_name=customer.service_name,
-                    price=customer.price)
+                    price=customer.price,
+                    uuid=str(uuid.uuid4()))
                 return allocation
             else:
                 self.customer_offers.append(customer)

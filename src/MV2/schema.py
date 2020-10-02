@@ -33,5 +33,6 @@ class AllocationSchema(pulsar.schema.Record):
     end = pulsar.schema.Integer()
     service_name = pulsar.schema.String()
     price = pulsar.schema.Float()
+    uuid = pulsar.schema.String()
 
 
