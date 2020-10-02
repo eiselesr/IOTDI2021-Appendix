@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+  geth:
+    build: .
+    ports:
+      - "30303:30303"
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+volumes:
+  gethdata:
