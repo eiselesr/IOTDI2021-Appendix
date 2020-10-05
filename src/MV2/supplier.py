@@ -48,10 +48,11 @@ class Trader:
     def process(self, input, context=None):
         if self.tenant in input.value().suppliers:
             service = input.value().service_name
+            uuid = input.value().uuid
             print(service)
             PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service)
-            service_input = "persistent://{}/{}/input{}".format(self.tenant, service, input.value().uuid)
-            service_output = "persistent://{}/{}/output{}".format(self.tenant, service, input.value().uuid)
+            service_input = "persistent://{}/{}/input{}".format(self.tenant, service, uuid)
+            service_output = "persistent://{}/{}/output{}".format(self.tenant, service, uuid)
             producer = self.client.create_producer(topic=service_output)
 
             print("{}: DO THE JOB".format(self.tenant))
@@ -59,7 +60,7 @@ class Trader:
             for i in range(10):
                 result = random.choice(["correct", "cheat", "fault"])
                 # print(result)
-                properties = {"tenant": self.tenant, "sequence_id": str(i), "encoding": "utf-8"}
+                properties = {"supplier": self.tenant, "seq_num": str(i), "encoding": "utf-8", "allocation_uuid": uuid}
 
                 producer.send(result.encode(properties["encoding"]), properties=properties, sequence_id=i)
                 # producer.send(result.encode(properties["encoding"]), sequence_id=i)

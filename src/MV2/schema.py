@@ -26,7 +26,7 @@ class SupplierOfferSchema(pulsar.schema.Record):
 
 
 class AllocationSchema(pulsar.schema.Record):
-    aid = pulsar.schema.Integer()
+    seqnum = pulsar.schema.Integer()
     customer = pulsar.schema.String()
     suppliers = pulsar.schema.Array(pulsar.schema.String())
     start = pulsar.schema.Integer()

@@ -16,7 +16,7 @@ class Allocator:
         self.supplier_offers = []
         self.service = ""
         self.count = 0
-        self.aid = 0
+        self.seqnum = 0
 
         client = pulsar.Client(cfg.pulsar_url)
         # allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation"

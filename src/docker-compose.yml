@@ -5,6 +5,9 @@ services:
     image: apachepulsar/pulsar:2.6.1
     command: bin/pulsar standalone
     volumes:
+      - type: bind
+        source: ./shared
+        target: /pulsar/shared
       - type: volume
         source: pulsardata
         target: /pulsar/data
