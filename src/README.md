@@ -1,3 +1,5 @@
+
+## Test 1: run test.py from separate container
 ```bash
 cd <MODiCuM-Streaming>/src
 docker-compose build
@@ -11,4 +13,15 @@ docker run -it --network src_default mv
 # inside that container you can run the test script
 cd /code/MV2
 python3 test.py
+```
+
+
+## Test 2: full test
+```bash
+# setup everything
+cd <MODiCuM-Streaming>/src
+docker-compose build
+docker-compose up
+
+
 ```
