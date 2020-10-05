@@ -3,4 +3,4 @@ COPY . /code
 WORKDIR /code
 RUN pip install -r /requirements.txt
 WORKDIR /code
-ENTRYPOINT ["python", "bin/allocator.py"]
+ENTRYPOINT ["python", "bin/customer.py"]
