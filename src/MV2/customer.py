@@ -53,7 +53,7 @@ class Trader:
             user=self.tenant,
             account="wallet",
             cpu=1E7,
-            rate=60,
+            rate=60,  # per second
             price=0.000001,
             replicas=replicas
         )
