@@ -16,7 +16,7 @@ python3 test.py
 ```
 
 
-## Test 2: full test
+## Test Executables
 ```bash
 # setup everything
 cd <MODiCuM-Streaming>/src

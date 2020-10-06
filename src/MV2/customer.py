@@ -1,9 +1,8 @@
 import time
 import datetime
 import pulsar
-import PulsarREST
-import cfg
-import schema
+import random
+from . import schema, cfg, PulsarREST
 
 
 class Fulfillment(pulsar.Function):
@@ -16,29 +15,29 @@ class Fulfillment(pulsar.Function):
 
 class Trader:
     def __init__(self, tenant):
-        self.id = self.register()
+        print("lk")
         self.tenant = tenant
+        self.client = pulsar.Client(cfg.pulsar_url)
 
-        client = pulsar.Client(cfg.pulsar_url)
+        # allocation consumer
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
+        self.allocation_consumer = self.client.subscribe(allocation_topic,
+                                                         schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
+                                                         subscription_name="allocation{}".format(tenant),
+                                                         initial_position=pulsar.InitialPosition.Earliest,
+                                                         consumer_type=pulsar.ConsumerType.Exclusive)
 
-        # WHY DOES COMMENTING THIS OUT CAUSE THE CONNECTION TO CLOSE?
-        self.subscriber = client.subscribe(allocation_topic,
-                                           schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
-                                           subscription_name="allocation{}".format(tenant),
-                                           initial_position=pulsar.InitialPosition.Earliest,
-                                           consumer_type=pulsar.ConsumerType.Exclusive)
+        # customer offers producer
+        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers"
+        self.customer_offers_producer = self.client.create_producer(topic=offer_topic,
+                                                                    schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
-        # offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers"
-        offer_topic = "customer_offers"
-        self.producer = client.create_producer(topic=offer_topic,
-                                               schema=pulsar.schema.JsonSchema(schema.CustomerOfferSchema))
 
-    def register(self):
-        # blockchain shenanigans
-        return 0
 
-    def post_offer(self, oid, replicas=1):
+
+    ### public methods ###
+
+    def post_offer(self, seqnum, service_name, num_messages, replicas=1):
 
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         start = now + datetime.timedelta(minutes=15)
@@ -46,32 +45,49 @@ class Trader:
 
         # offer = self.OfferSchema(
         offer = schema.CustomerOfferSchema(
-            oid=oid,
+            seqnum=seqnum,
             start=int(datetime.datetime.timestamp(start)),
             end=int(datetime.datetime.timestamp(end)),
-            service_name="traffic_detection",
+            service_name=service_name,
             user=self.tenant,
             account="wallet",
             cpu=1E7,
             rate=60,  # per second
             price=0.000001,
-            replicas=replicas
+            replicas=replicas,
+            num_messages=num_messages
         )
 
         properties = {"content-type": "application/json"}
 
-        self.producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
+        self.customer_offers_producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
+
+    def get_allocation(self):
+        while True:
+            msg = self.allocation_consumer.receive()
+            if self.tenant in msg.value().consumers:
+                return msg
+
+    def send_data(self, msg, num_messages):
+        service_name = msg.value().service_name
+        seqnum = msg.value().seqnum
+        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service_name)
+        input_topic = f"persistent://{self.tenant}/{service_name}/{seqnum}"
+        input_producer = self.client.create_producer(topic=input_topic)
+
+        for i in range(int(num_messages)):
+            data = str(random.randint(1, 10))
+            input_producer.send(data.encode("utf-8"))
+
+    def close(self):
+        self.client.close()
+
+    ### private methods ###
 
     def read_allocation(self):
         pass
 
+    def register(self):
+        # blockchain shenanigans
+        return 0
 
-
-
-
-if __name__ == "__main__":
-    print((datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(minutes=15) - datetime.datetime(1970, 1, 1,tzinfo=datetime.timezone.utc)).total_seconds())
-    t = datetime.datetime.timestamp(datetime.datetime.now(tz=datetime.timezone.utc)) + 15*60
-    print(int(t))
-    # print(datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc))
-    print(t)
