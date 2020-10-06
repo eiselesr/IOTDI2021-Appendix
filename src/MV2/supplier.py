@@ -2,10 +2,8 @@ import time
 import json
 import datetime
 import pulsar
-import PulsarREST
-import cfg
-import schema
 import random
+from . import PulsarREST, cfg, schema
 
 
 class Fulfillment(pulsar.Function):
@@ -20,8 +18,6 @@ class Trader:
     def __init__(self, tenant, seed):
         self.id = self.register()
         self.tenant = tenant
-        self.received_messages = []
-        self.seed = seed
 
         self.client = pulsar.Client(cfg.pulsar_url)
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
@@ -29,86 +25,29 @@ class Trader:
         PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=tenant)
 
         # WHY DOES COMMENTING THIS OUT CAUSE THE CONNECTION TO CLOSE?
-        self.subscriber = self.client.subscribe(allocation_topic,
-                                           schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
-                                           subscription_name="allocation{}".format(tenant),
-                                           initial_position=pulsar.InitialPosition.Earliest,
-                                           consumer_type=pulsar.ConsumerType.Exclusive,
-                                           message_listener=self.listener)
+        self.allocation_consumer = self.client.subscribe(allocation_topic,
+                                              schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
+                                              subscription_name="allocation{}".format(tenant),
+                                              initial_position=pulsar.InitialPosition.Earliest,
+                                              consumer_type=pulsar.ConsumerType.Exclusive)
+
         # In exclusive mode, only a single consumer is allowed to attach
         # to the subscription. If multiple consumers subscribe to a topic
         # using the same subscription, an error occurs.
         # https://pulsar.apache.org/docs/en/concepts-messaging/
 
-        # offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers"
-        offer_topic = "supply_offers"
-        self.producer = self.client.create_producer(topic=offer_topic,
-                                                    schema=pulsar.schema.JsonSchema(schema.SupplierOfferSchema))
+        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers"
+        self.supply_offers_producer = self.client.create_producer(topic=offer_topic,
+                                                    schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
-    def process(self, input, context=None):
-        if self.tenant in input.value().suppliers:
-            service = input.value().service_name
-            uuid = input.value().uuid
-            print(service)
-            PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service)
-            service_input = "persistent://{}/{}/input{}".format(self.tenant, service, uuid)
-            service_output = "persistent://{}/{}/output{}".format(self.tenant, service, uuid)
-            producer = self.client.create_producer(topic=service_output)
+    ### public methods ###
 
-            print("{}: DO THE JOB".format(self.tenant))
-            random.seed(self.seed)
-            for i in range(10):
-                result = random.choice(["correct", "cheat", "fault"])
-                # print(result)
-                properties = {"supplier": self.tenant, "seq_num": str(i), "encoding": "utf-8", "allocation_uuid": uuid}
-
-                producer.send(result.encode(properties["encoding"]), properties=properties, sequence_id=i)
-                # producer.send(result.encode(properties["encoding"]), sequence_id=i)
-
-                # data
-                # event_timestamp
-                # message_id
-                # partition_key
-                # properties
-                # publish_timestamp
-                # redelivery_count
-                # topic_name
-                # value
-
-                # send(content, properties=None, partition_key=None,
-                #      sequence_id=None, replication_clusters=None,
-                #      disable_replication=False, event_timestamp=None,
-                #      deliver_at=None, deliver_after=None)
-            # TODO - DELETE NAMESPACE WHEN DONE
-            return True
-        else:
-            return False
-
-
-    def listener(self, consumer, msg):
-        data = self.process(msg)
-        # print(f"Listener: {data}")
-        if data:
-            print("{}: DID THE JOB".format(self.tenant))
-        else:
-            print("{}: NOT MY JOB".format(self.tenant))
-
-        self.received_messages.append(msg)
-        consumer.acknowledge(msg)
-
-    def register(self):
-        # blockchain shenanigans
-        return 0
-
-    def post_offer(self, oid):
-
+    def post_offer(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         start = now + datetime.timedelta(minutes=15)
         end = now + datetime.timedelta(days=1)
-
-        # offer = self.OfferSchema(
         offer = schema.SupplierOfferSchema(
-            oid=oid,
+            seqnum=-1,
             start=int(datetime.datetime.timestamp(start)),
             end=int(datetime.datetime.timestamp(end)),
             service_name="NA",
@@ -117,16 +56,51 @@ class Trader:
             cpu=1E9,
             rate=1,
             price=0.000001,
-            replicas=1
+            replicas=-1,
+            num_messages=-1
         )
-
         properties = {"content-type": "application/json"}
+        self.supply_offers_producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
 
-        self.producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
+    def get_allocation(self):
+        while True:
+            msg = self.allocation_consumer.receive()
+            if self.tenant in msg.value().suppliers:
+                return msg
 
-    def read_allocation(self):
-        pass
+    def do_job(self, msg):
+        service_name = msg.value().service_name
+        seqnum = msg.value().seqnum
+        input_tenant = msg.value().customer
+        num_messages = msg.value().num_messages
 
+        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service_name)
+        service_output = "persistent://{}/{}/{}".format(self.tenant, service_name, seqnum)
+        producer = self.client.create_producer(topic=service_output)
+
+        # get the data
+        service_input = "persistent://{}/{}/{}".format(input_tenant, service_name, seqnum)
+        job_consumer = self.client.subscribe(service_input,
+                                             initial_position=pulsar.InitialPosition.Earliest,
+                                             consumer_type=pulsar.ConsumerType.Exclusive,
+                                             subscription_name=f"{self.tenant}_{service_name}_{seqnum}")
+
+        result = random.choice(["correct", "cheat", "fault"])
+        for i in range(num_messages):
+            data = int(job_consumer.receive().data().decode("utf-8"))
+            if result == "correct":
+                producer.send(str(data).decode("utf-8"))
+            elif result == "cheat":
+                producer.send(str(random.randint(0, 10)).decode("utf-8"))
+            else:
+                continue
+
+
+    ### private methods###
+
+    def register(self):
+        # blockchain shenanigans
+        return 0
 
     def create_function(self):
 

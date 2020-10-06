@@ -1,7 +1,7 @@
 import re
 import pulsar
-import cfg
-import schema
+from . import cfg, schema
+
 
 class Verifier:
     def __init__(self, tenant):
@@ -10,12 +10,12 @@ class Verifier:
         self.client = pulsar.Client(cfg.pulsar_url)
 
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
-        self.consumer = self.client.subscribe(allocation_topic,
-                                              schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
-                                              subscription_name="allocation{}".format(tenant),
-                                              initial_position=pulsar.InitialPosition.Earliest,
-                                              consumer_type=pulsar.ConsumerType.Exclusive,
-                                              message_listener=self.allocation_listener)
+        self.allocation_consumer = self.client.subscribe(allocation_topic,
+                                                         schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
+                                                         subscription_name="allocation{}".format(tenant),
+                                                         initial_position=pulsar.InitialPosition.Earliest,
+                                                         consumer_type=pulsar.ConsumerType.Exclusive,
+                                                         message_listener=self.allocation_listener)
 
     def process(self, input, context=None):
         pass
@@ -32,7 +32,6 @@ class Verifier:
         self.received_results[allocation][supplier] = result
         print(self.received_results)
         # compare the results from allocated suppliers
-
 
 
     def allocation_listener(self, consumer, msg):

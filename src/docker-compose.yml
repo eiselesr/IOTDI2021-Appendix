@@ -20,11 +20,11 @@ services:
     cap_add:
       - NET_RAW
       - NET_ADMIN
-  mv:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: mv
+#  mv:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    image: mv
 volumes:
   pulsardata:
   pulsarconf:
