@@ -1,11 +1,9 @@
-import os
-os.chdir(os.path.join(os.getcwd(), "MV2"))
-import allocator
 import time
-import argparse
+from MV2 import *
 
 
 if __name__=="__main__":
     a = allocator.Allocator()
+    time.sleep(5)
     while True:
-        time.sleep(1)
+        time.sleep(0.1)

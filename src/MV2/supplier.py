@@ -15,9 +15,10 @@ class Fulfillment(pulsar.Function):
 
 
 class Trader:
-    def __init__(self, tenant, seed):
+    def __init__(self, tenant, behavior):
         self.id = self.register()
         self.tenant = tenant
+        self.behavior = behavior
 
         self.client = pulsar.Client(cfg.pulsar_url)
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
@@ -39,6 +40,8 @@ class Trader:
         offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers"
         self.supply_offers_producer = self.client.create_producer(topic=offer_topic,
                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema))
+        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
+        self.logger.send(f"supplier-{self.tenant}: done initializing supplier I will be {self.behavior}".encode("utf-8"))
 
     ### public methods ###
 
@@ -46,8 +49,8 @@ class Trader:
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         start = now + datetime.timedelta(minutes=15)
         end = now + datetime.timedelta(days=1)
-        offer = schema.SupplierOfferSchema(
-            seqnum=-1,
+        offer = schema.OfferSchema(
+            jobid=-1,
             start=int(datetime.datetime.timestamp(start)),
             end=int(datetime.datetime.timestamp(end)),
             service_name="NA",
@@ -61,39 +64,39 @@ class Trader:
         )
         properties = {"content-type": "application/json"}
         self.supply_offers_producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
+        self.logger.send(f"supplier-{self.tenant}: sent an offer".encode("utf-8"))
 
     def get_allocation(self):
         while True:
             msg = self.allocation_consumer.receive()
             if self.tenant in msg.value().suppliers:
+                self.logger.send(f"supplier-{self.tenant}: got an allocation for jobid {msg.value().jobid}".encode("utf-8"))
                 return msg
 
     def do_job(self, msg):
-        service_name = msg.value().service_name
-        seqnum = msg.value().seqnum
-        input_tenant = msg.value().customer
-        num_messages = msg.value().num_messages
-
-        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service_name)
-        service_output = "persistent://{}/{}/{}".format(self.tenant, service_name, seqnum)
+        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=msg.value().service_name)
+        service_output = f"persistent://{self.tenant}/{msg.value().service_name}/{msg.value().jobid}"
         producer = self.client.create_producer(topic=service_output)
 
         # get the data
-        service_input = "persistent://{}/{}/{}".format(input_tenant, service_name, seqnum)
+        service_input = f"persistent://{msg.value().customer}/{msg.value().service_name}/{msg.value().jobid}"
         job_consumer = self.client.subscribe(service_input,
                                              initial_position=pulsar.InitialPosition.Earliest,
                                              consumer_type=pulsar.ConsumerType.Exclusive,
-                                             subscription_name=f"{self.tenant}_{service_name}_{seqnum}")
+                                             subscription_name=f"{self.tenant}_{msg.value().service_name}_{msg.value().jobid}")
 
-        result = random.choice(["correct", "cheat", "fault"])
-        for i in range(num_messages):
+        properties = {"jobid": msg.value().jobid, 'supplier': self.tenant}
+        for i in range(msg.value().num_messages):
             data = int(job_consumer.receive().data().decode("utf-8"))
-            if result == "correct":
-                producer.send(str(data).decode("utf-8"))
-            elif result == "cheat":
-                producer.send(str(random.randint(0, 10)).decode("utf-8"))
+            if self.behavior == "correct":
+                producer.send(str(data).encode("utf-8"), properties=properties)
             else:
-                continue
+                producer.send(str(random.randint(0, 10)).encode("utf-8"), properties=properties)
+        self.logger.send(f"supplier-{self.tenant}: done doing job {msg.value().jobid}".encode("utf-8"))
+        producer.close()
+
+    def close(self):
+        self.client.close()
 
 
     ### private methods###

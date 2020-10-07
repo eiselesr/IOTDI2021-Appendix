@@ -1,11 +1,21 @@
 import re
 import pulsar
+import pandas as pd
 from . import cfg, schema
 
 
 class Verifier:
     def __init__(self, tenant):
-        self.received_results = {}
+        self.df_results = pd.DataFrame(columns=['result',
+                                                'supplier'
+                                                'jobid'])
+
+        self.df_allocations = pd.DataFrame(columns=['jobid',
+                                                    'customer',
+                                                    'suppliers',
+                                                    'replicas',
+                                                    'num_messages',
+                                                    'service_name'])
         self.tenant = tenant
         self.client = pulsar.Client(cfg.pulsar_url)
 
@@ -20,38 +30,51 @@ class Verifier:
     def process(self, input, context=None):
         pass
 
-
     def result_listener(self, consumer, msg):
+        val = int(msg.data().decode("utf-8"))
+        jobid = msg.properties()['jobid']
+        supplier = msg.properties()['supplier']
+        self.df_results.append({'result': val, 'supplier': supplier, 'jobid': jobid}, ignore_index=True)
         consumer.acknowledge(msg)
-        print("verifier:{} topic:{} value:{}".format(self.tenant, msg.topic_name(), msg.value()))
-        allocation = msg.properties()["allocation_uuid"]
-        supplier = msg.properties()["supplier"]
-        result = msg.value()
-        if allocation not in self.received_results:
-            self.received_results[allocation] = allocation
-        self.received_results[allocation][supplier] = result
-        print(self.received_results)
-        # compare the results from allocated suppliers
 
+        # check if this completes job
+        job = self.df_allocations[self.df_allocations['jobid']==jobid].iloc[0]
+        complete = True
+        tester = []
+        for s in job['suppliers']:
+            temp = self.df_results.loc[((self.df_results['supplier']==s) & (self.df_results['jobid']==jobid)), 'result'].values.tolist()
+            if len(temp) == job['replicas']:
+                tester.append(temp)
+            else:
+                complete = False
+        if complete:
+            correct = True
+            for i in range(1, len(tester)):
+                if tester[0] != tester[i]:
+                    correct = False
+                    break
+            p = self.client.create_producer(topic=f"persistent://{job['customer']}/{job['service_name']}/{jobid}-output")
+            if correct:
+                for val in tester[0]:
+                    p.send(str(val).encode("utf-8"))
+            else:
+                p.send("job failed".encode("utf-8"))
+            p.close()
 
     def allocation_listener(self, consumer, msg):
         consumer.acknowledge(msg)
-        print("this is the allocation: {}".format(msg.value()))
-
-        service = msg.value().service_name
-        allocation = "{}_{}".format(service, msg.value().uuid)
-        sub_name = "{}_{}".format(self.tenant, allocation)
+        self.df_allocations.append({'jobid': msg.value().jobid,
+                                    'customer': msg.value().customer,
+                                    'suppliers': msg.value().suppliers,
+                                    'num_messages': msg.value().num_messages,
+                                    'service_name': msg.value().service_name,
+                                    'replicas': msg.value().replicas}, ignore_index=True)
         for supplier in msg.value().suppliers:
-            print("This is the supplier:{}".format(supplier))
-            topic = "persistent://{}/{}/output{}".format(supplier, service, msg.value().uuid)
-
-
+            topic = "persistent://{}/{}/{}".format(supplier, msg.value().service_name, msg.value().jobid)
             self.client.subscribe(topic,
-                                  subscription_name=sub_name,
+                                  subscription_name=f"verifier_{self.tenant}_{msg.value().allocationid}",
                                   initial_position=pulsar.InitialPosition.Earliest,
                                   consumer_type=pulsar.ConsumerType.Exclusive,
                                   message_listener=self.result_listener)
-
-        self.received_results[allocation] = []
 
 
