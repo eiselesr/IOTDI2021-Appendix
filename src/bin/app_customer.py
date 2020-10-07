@@ -1,5 +1,6 @@
 import time
 import argparse
+import uuid
 from MV2 import *
 
 
@@ -31,11 +32,6 @@ if __name__=="__main__":
                         help="number of messages",
                         default='10')
 
-    parser.add_argument("-s",
-                        "--sleep_btw_offers",
-                        help="sleep time in seconds between offers",
-                        default='1')
-
 
     args = parser.parse_args()
 
@@ -43,10 +39,14 @@ if __name__=="__main__":
 
     time.sleep(5)
 
-    for seqnum in range(int(args.num_windows)):
-        c.post_offer(seqnum=seqnum,
+    for window in range(int(args.num_windows)):
+        jobid = str(uuid.uuid4())
+        c.post_offer(jobid=jobid,
                      service_name=args.service_name,
+                     num_messages=int(args.num_messages),
                      replicas=int(args.replicas))
         msg = c.get_allocation()
         c.send_data(msg, args.num_messages)
-        time.sleep(int(args.sleep_btw_offers))
+        c.retrieve_result(args.service_name, jobid, int(args.num_messages))
+        time.sleep(5)
+    c.close()

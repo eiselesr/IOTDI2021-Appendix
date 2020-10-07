@@ -15,7 +15,6 @@ class Fulfillment(pulsar.Function):
 
 class Trader:
     def __init__(self, tenant):
-        print("lk")
         self.tenant = tenant
         self.client = pulsar.Client(cfg.pulsar_url)
 
@@ -32,20 +31,21 @@ class Trader:
         self.customer_offers_producer = self.client.create_producer(topic=offer_topic,
                                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
+        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
+        self.logger.send(f"customer-{self.tenant}: done initializing customer".encode("utf-8"))
 
 
+### public methods ###
 
-    ### public methods ###
-
-    def post_offer(self, seqnum, service_name, num_messages, replicas=1):
+    def post_offer(self, jobid, service_name, num_messages, replicas=1):
 
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         start = now + datetime.timedelta(minutes=15)
         end = now + datetime.timedelta(days=1)
 
         # offer = self.OfferSchema(
-        offer = schema.CustomerOfferSchema(
-            seqnum=seqnum,
+        offer = schema.OfferSchema(
+            jobid=jobid,
             start=int(datetime.datetime.timestamp(start)),
             end=int(datetime.datetime.timestamp(end)),
             service_name=service_name,
@@ -57,27 +57,37 @@ class Trader:
             replicas=replicas,
             num_messages=num_messages
         )
-
         properties = {"content-type": "application/json"}
-
         self.customer_offers_producer.send(offer, properties, event_timestamp=int(datetime.datetime.timestamp(now)))
+        self.logger.send(f"customer-{self.tenant}: posted offer with jobid {jobid}".encode("utf-8"))
 
     def get_allocation(self):
         while True:
             msg = self.allocation_consumer.receive()
-            if self.tenant in msg.value().consumers:
+            if self.tenant == msg.value().customer:
+                self.logger.send(f"customer-{self.tenant}: got allocation for job {msg.value().jobid}, will be supplied by {msg.value().suppliers}".encode("utf-8"))
                 return msg
 
     def send_data(self, msg, num_messages):
-        service_name = msg.value().service_name
-        seqnum = msg.value().seqnum
-        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=service_name)
-        input_topic = f"persistent://{self.tenant}/{service_name}/{seqnum}"
+        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=msg.value().service_name)
+        input_topic = f"persistent://{self.tenant}/{msg.value().service_name}/{msg.value().jobid}"
         input_producer = self.client.create_producer(topic=input_topic)
 
         for i in range(int(num_messages)):
             data = str(random.randint(1, 10))
             input_producer.send(data.encode("utf-8"))
+        self.logger.send(f"customer-{self.tenant}: sent {num_messages} for jobid {msg.value().jobid}, done sending messages".encode("utf-8"))
+        input_producer.close()
+
+    def retrieve_result(self, service_name, jobid, num_messages):
+        c = self.client.subscribe(topic=f"persistent://{self.tenant}/{service_name}/{jobid}-output", subscription_name=f"results-{self.tenant}-{jobid}")
+        counter = 0
+        while True:
+            result = str(c.receive().data().decode("utf-8"))
+            counter += 1
+            self.logger.send(f"customer-{self.tenant}: got result {result}")
+            if (result == "job failed") or counter >= num_messages:
+                break
 
     def close(self):
         self.client.close()

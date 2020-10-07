@@ -1,20 +1,22 @@
 import os
-os.chdir(os.path.join(os.getcwd(), "MV2"))
-import verifier
 import time
 import argparse
+from MV2 import *
 
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser(description="verifier")
+    parser = argparse.ArgumentParser(description="supplier")
 
     parser.add_argument("-t",
                         "--tenant",
                         help="tenant",
-                        default='sh4')
+                        default='s1')
+
+
     args = parser.parse_args()
 
-    v = verifier.Verifier(tenant=args.tenant)
+    s = verifier.Verifier(tenant=args.tenant)
+    time.sleep(5)
 
     while True:
-        time.sleep(1)
+        time.sleep(0.1)
