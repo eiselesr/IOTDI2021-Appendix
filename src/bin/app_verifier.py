@@ -10,7 +10,7 @@ if __name__=="__main__":
     parser.add_argument("-t",
                         "--tenant",
                         help="tenant",
-                        default='s1')
+                        default='v1')
 
 
     args = parser.parse_args()

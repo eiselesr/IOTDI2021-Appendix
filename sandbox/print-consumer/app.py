@@ -5,7 +5,6 @@ import json
 
 
 def main(pulsar_url="pulsar://localhost:6650",
-         pulsar_admin_url="http://localhost:8080/admin/v2",
          tenant="public",
          namespace="default",
          topic="my-topic",
@@ -40,11 +39,6 @@ def get_args():
                         help="pulsar url",
                         default='pulsar://localhost:6650')
 
-    parser.add_argument("-a",
-                        "--pulsar_admin_url",
-                        help="pulsar admin rest url",
-                        default="http://localhost:8080/admin/v2")
-
     parser.add_argument("-t",
                         "--tenant",
                         help="pulsar tenant",
@@ -72,7 +66,6 @@ if __name__=="__main__":
     args = get_args()
 
     main(pulsar_url=args.pulsar_url,
-         pulsar_admin_url=args.pulsar_admin_url,
          tenant=args.tenant,
          namespace=args.namespace,
          topic=args.topic,
