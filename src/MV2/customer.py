@@ -16,7 +16,15 @@ class Fulfillment(pulsar.Function):
 class Trader:
     def __init__(self, tenant):
         self.tenant = tenant
+        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant)
+
         self.client = pulsar.Client(cfg.pulsar_url)
+        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
+
+        # customer offers producer
+        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers"
+        self.customer_offers_producer = self.client.create_producer(topic=offer_topic,
+                                                                    schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
         # allocation consumer
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
@@ -25,14 +33,9 @@ class Trader:
                                                          subscription_name="allocation{}".format(tenant),
                                                          initial_position=pulsar.InitialPosition.Earliest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive)
-
-        # customer offers producer
-        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers"
-        self.customer_offers_producer = self.client.create_producer(topic=offer_topic,
-                                                                    schema=pulsar.schema.JsonSchema(schema.OfferSchema))
-
-        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
         self.logger.send(f"customer-{self.tenant}: done initializing customer".encode("utf-8"))
+
+
 
 
 ### public methods ###
@@ -88,6 +91,7 @@ class Trader:
             self.logger.send(f"customer-{self.tenant}: got result {result}")
             if (result == "job failed") or counter >= num_messages:
                 break
+        c.close()
 
     def close(self):
         self.client.close()

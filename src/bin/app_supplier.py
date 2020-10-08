@@ -29,5 +29,4 @@ if __name__=="__main__":
         s.post_offer()
         msg = s.get_allocation()
         s.do_job(msg)
-        time.sleep(5)
     s.close()

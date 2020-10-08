@@ -16,7 +16,6 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     s = verifier.Verifier(tenant=args.tenant)
-    time.sleep(5)
 
     while True:
         time.sleep(0.1)

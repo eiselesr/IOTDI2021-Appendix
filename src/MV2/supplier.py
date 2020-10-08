@@ -18,30 +18,26 @@ class Trader:
     def __init__(self, tenant, behavior):
         self.id = self.register()
         self.tenant = tenant
+        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant)
         self.behavior = behavior
 
         self.client = pulsar.Client(cfg.pulsar_url)
+        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
+
+        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers"
+        self.supply_offers_producer = self.client.create_producer(topic=offer_topic,
+                                                              schema=pulsar.schema.JsonSchema(schema.OfferSchema))
+
         allocation_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic"
-
-        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=tenant)
-
-        # WHY DOES COMMENTING THIS OUT CAUSE THE CONNECTION TO CLOSE?
         self.allocation_consumer = self.client.subscribe(allocation_topic,
                                               schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
                                               subscription_name="allocation{}".format(tenant),
                                               initial_position=pulsar.InitialPosition.Earliest,
                                               consumer_type=pulsar.ConsumerType.Exclusive)
-
-        # In exclusive mode, only a single consumer is allowed to attach
-        # to the subscription. If multiple consumers subscribe to a topic
-        # using the same subscription, an error occurs.
-        # https://pulsar.apache.org/docs/en/concepts-messaging/
-
-        offer_topic = f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers"
-        self.supply_offers_producer = self.client.create_producer(topic=offer_topic,
-                                                    schema=pulsar.schema.JsonSchema(schema.OfferSchema))
-        self.logger = self.client.create_producer(topic=f"{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
         self.logger.send(f"supplier-{self.tenant}: done initializing supplier I will be {self.behavior}".encode("utf-8"))
+
+
+
 
     ### public methods ###
 
@@ -50,7 +46,7 @@ class Trader:
         start = now + datetime.timedelta(minutes=15)
         end = now + datetime.timedelta(days=1)
         offer = schema.OfferSchema(
-            jobid=-1,
+            jobid="NA",
             start=int(datetime.datetime.timestamp(start)),
             end=int(datetime.datetime.timestamp(end)),
             service_name="NA",
@@ -70,14 +66,16 @@ class Trader:
         while True:
             msg = self.allocation_consumer.receive()
             if self.tenant in msg.value().suppliers:
+                PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=msg.value().service_name)
                 self.logger.send(f"supplier-{self.tenant}: got an allocation for jobid {msg.value().jobid}".encode("utf-8"))
                 return msg
 
     def do_job(self, msg):
-        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=msg.value().service_name)
+        # TODO move to get allocation
         service_output = f"persistent://{self.tenant}/{msg.value().service_name}/{msg.value().jobid}"
         producer = self.client.create_producer(topic=service_output)
 
+        # TODO move to allocation
         # get the data
         service_input = f"persistent://{msg.value().customer}/{msg.value().service_name}/{msg.value().jobid}"
         job_consumer = self.client.subscribe(service_input,
@@ -85,11 +83,12 @@ class Trader:
                                              consumer_type=pulsar.ConsumerType.Exclusive,
                                              subscription_name=f"{self.tenant}_{msg.value().service_name}_{msg.value().jobid}")
 
+        # do_job
         properties = {"jobid": msg.value().jobid, 'supplier': self.tenant}
         for i in range(msg.value().num_messages):
-            data = int(job_consumer.receive().data().decode("utf-8"))
+            data = job_consumer.receive()
             if self.behavior == "correct":
-                producer.send(str(data).encode("utf-8"), properties=properties)
+                producer.send(data.data(), properties=properties)
             else:
                 producer.send(str(random.randint(0, 10)).encode("utf-8"), properties=properties)
         self.logger.send(f"supplier-{self.tenant}: done doing job {msg.value().jobid}".encode("utf-8"))

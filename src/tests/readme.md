@@ -1,6 +1,8 @@
 shell 1: run pulsar
 ```bash
 cd <MODiCuM-Streaming>/src
+docker rm -f $(docker ps -a -q)
+docker volume rm $(docker volume ls -q)
 docker-compose up
 ```
 
@@ -11,7 +13,18 @@ python app.py \
     --pulsar_url "pulsar://localhost:6650" \
     --tenant "public" \
     --namespace "default" \
-    --topic "logger"
+    --topic "logger" \
+    --timeout "none"
+
+persistent://s1/rand_nums/27032e0e-5232-4b59-beb9-994e4e304b35
+
+python app.py \
+    --pulsar_url "pulsar://localhost:6650" \
+    --tenant "s1" \
+    --namespace "rand_nums" \
+    --topic "27032e0e-5232-4b59-beb9-994e4e304b35" \
+    --timeout "none" \
+    --subscription_name "test3"
 ```
 
 shell 3: run allocator
@@ -23,8 +36,7 @@ python bin/app_allocator.py
 shell 4: run verifier
 ```bash
 cd <MODiCuM-Streaming>/src
-python bin/app_verifier.py \
-    --tenant "v1"
+python bin/app_verifier.py --tenant "v1"
 ```
 
 shell 5: run supplier 1
