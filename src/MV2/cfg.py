@@ -7,3 +7,4 @@ function_api = "http://localhost:8080/admin/v3/functions"
 tenant = "public"
 namespace = "default"
 logger_topic = "logger"
+window = 5

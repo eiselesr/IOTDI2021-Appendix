@@ -1,6 +1,5 @@
 import time
 import argparse
-import uuid
 from MV2 import *
 
 
@@ -9,44 +8,32 @@ if __name__=="__main__":
 
     parser.add_argument("-t",
                         "--tenant",
-                        help="tenant",
-                        default='c1')
+                        help="tenant")
 
     parser.add_argument("-r",
                         "--replicas",
-                        help="number of replicas",
-                        default='2')
+                        help="number of replicas")
 
     parser.add_argument("-a",
                         "--service_name",
-                        help="name of service",
-                        default='traffic_analyzer')
+                        help="name of service")
 
-    parser.add_argument("-n",
-                        "--num_windows",
-                        help="number of windows",
-                        default='5')
+    parser.add_argument("-st",
+                        "--start_time",
+                        help="start time in seconds")
 
-    parser.add_argument("-m",
-                        "--num_messages",
-                        help="number of messages",
-                        default='10')
+    parser.add_argument("-et",
+                        "--end_time",
+                        help="end time in seconds")
 
 
     args = parser.parse_args()
 
-    c = customer.Trader(tenant=args.tenant)
+    c = customer.Trader(tenant=args.tenant,
+                        replicas=int(args.replicas),
+                        service_name=args.service_name,
+                        start_time=float(args.start_time),
+                        end_time=float(args.end_time))
 
-    time.sleep(5)
-
-    for window in range(int(args.num_windows)):
-        jobid = str(uuid.uuid4())
-        c.post_offer(jobid=jobid,
-                     service_name=args.service_name,
-                     num_messages=int(args.num_messages),
-                     replicas=int(args.replicas))
-        msg = c.get_allocation()
-        c.send_data(msg, args.num_messages)
-        c.retrieve_result(args.service_name, jobid, int(args.num_messages))
-        time.sleep(5)
+    c.run()
     c.close()
