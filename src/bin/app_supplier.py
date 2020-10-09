@@ -17,16 +17,21 @@ if __name__=="__main__":
                         help="correct or cheat",
                         default='correct')
 
+    parser.add_argument("-st",
+                        "--start_time",
+                        help="start time in seconds")
+
+    parser.add_argument("-et",
+                        "--end_time",
+                        help="end time in seconds")
+
 
     args = parser.parse_args()
 
     s = supplier.Trader(tenant=args.tenant,
-                        behavior=args.behavior)
+                        behavior=args.behavior,
+                        start_time=float(args.start_time),
+                        end_time=float(args.end_time))
 
-    time.sleep(5)
-
-    while True:
-        s.post_offer()
-        msg = s.get_allocation()
-        s.do_job(msg)
+    s.run()
     s.close()
