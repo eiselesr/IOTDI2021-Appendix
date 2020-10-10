@@ -15,16 +15,6 @@ python app.py \
     --namespace "default" \
     --topic "logger" \
     --timeout "none"
-
-persistent://s1/rand_nums/27032e0e-5232-4b59-beb9-994e4e304b35
-
-python app.py \
-    --pulsar_url "pulsar://localhost:6650" \
-    --tenant "s1" \
-    --namespace "rand_nums" \
-    --topic "27032e0e-5232-4b59-beb9-994e4e304b35" \
-    --timeout "none" \
-    --subscription_name "test3"
 ```
 
 shell 3: run allocator
@@ -61,7 +51,5 @@ cd <MODiCuM-Streaming>/src
 python bin/app_customer.py \
     --tenant "c1" \
     --replicas "2" \
-    --service_name "rand_nums" \
-    --num_windows "3" \
-    --num_messages "15"
+    --service_name "rand_nums" 
 ```

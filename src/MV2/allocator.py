@@ -2,6 +2,7 @@ import re
 import uuid
 import datetime
 import pulsar
+import time
 from . import PulsarREST, cfg, schema
 
 
@@ -20,8 +21,8 @@ class Allocator:
         self.logger.send(f"allocator: initializing".encode("utf-8"))
 
         # producer - allocation
-        self.producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
-                                                    schema=pulsar.schema.JsonSchema(schema.AllocationSchema))
+        self.allocation_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
+                                                               schema=pulsar.schema.JsonSchema(schema.AllocationSchema))
 
         # consumer - supply and customer offers
         self.offer_consumer = self.client.subscribe(topic=re.compile(f"persistent://{cfg.tenant}/{cfg.namespace}/.*_offers"),
@@ -29,6 +30,8 @@ class Allocator:
                                                     subscription_name="offer-sub",
                                                     initial_position=pulsar.InitialPosition.Earliest,
                                                     message_listener=self.offer_listener)
+        while True:
+            time.sleep(0.1)
 
     def offer_listener(self, consumer, msg):
         self.logger.send(f"allocator: got a an offer with topic_name {msg.topic_name()}".encode("utf-8"))
