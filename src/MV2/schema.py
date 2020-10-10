@@ -18,14 +18,14 @@ class AllocationSchema(pulsar.schema.Record):
     allocationid = pulsar.schema.String()
     customer = pulsar.schema.String()
     suppliers = pulsar.schema.Array(pulsar.schema.String())
-    start = pulsar.schema.Integer()
-    end = pulsar.schema.Integer()
+    start = pulsar.schema.Float()
+    end = pulsar.schema.Float()
     service_name = pulsar.schema.String()
     price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
 
 
-class Verifier(pulsar.schema.Record):
+class VerifierSchema(pulsar.schema.Record):
     result = pulsar.schema.String()
     customer = pulsar.schema.String()
     suppliers = pulsar.schema.Array(pulsar.schema.String())
@@ -33,7 +33,7 @@ class Verifier(pulsar.schema.Record):
     window = pulsar.schema.Integer()
     num_messages = pulsar.schema.Integer()
 
-class Check(pulsar.schema.Record):
+class CheckSchema(pulsar.schema.Record):
     result = pulsar.schema.String()
     status = pulsar.schema.String()
     startmessage = pulsar.schema.Integer()
