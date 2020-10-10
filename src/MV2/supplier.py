@@ -54,20 +54,23 @@ class Trader:
             # get allocation
             allocation = self.get_allocation()
 
+            # create namespace
+            PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=allocation.value().service_name)
+
             # producer - output
-            self.output_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{allocation.service_name}/output-{allocation.allocationid}")
+            self.output_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{allocation.value().service_name}/output-{allocation.value().allocationid}")
 
             # consumer - input
-            input_consumer = self.client.subscribe(topic=f"persistent://{allocation.customer}/{allocation.service_name}/input-{allocation.allocationid}",
-                                                   subscription_name=f"supplier-{self.tenant}-{allocation.allocationid}",
+            input_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/input-{allocation.value().allocationid}",
+                                                   subscription_name=f"supplier-{self.tenant}-{allocation.value().allocationid}",
                                                    initial_position=pulsar.InitialPosition.Earliest,
                                                    consumer_type=pulsar.ConsumerType.Exclusive,
                                                    message_listener=self.process_message)
 
             # consumer - check
-            check_consumer = self.client.subscribe(topic=f"persistent://{allocation.customer}/{allocation.service_name}/check",
-                                                   schema=pulsar.schema.JsonSchema(schema.Check),
-                                                   subscription_name=f"check-{self.tenant}-{allocation.allocationid}",
+            check_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/check",
+                                                   schema=pulsar.schema.JsonSchema(schema.CheckSchema),
+                                                   subscription_name=f"check-{self.tenant}-{allocation.value().allocationid}",
                                                    initial_position=pulsar.InitialPosition.Earliest,
                                                    consumer_type=pulsar.ConsumerType.Exclusive)
 
@@ -115,11 +118,11 @@ class Trader:
         while True:
             msg = self.allocation_consumer.receive()
             if self.tenant in msg.value().suppliers:
-                self.logger.send(f"supplier-{self.tenant}: got an allocation for jobid {msg.value().jobid}".encode("utf-8"))
+                self.logger.send(f"supplier-{self.tenant}: got an allocation for allocationid {msg.value().allocationid}".encode("utf-8"))
                 return msg
 
     def process_message(self, consumer, msg):
-        properties = {"msg-num": msg.properties()['msg-num']}
+        properties = {"msg-num": msg.properties()['msg-num'], "supplier": self.tenant, "allocationid": msg.properties()['allocationid']}
         if self.behavior == "correct":
             result = msg.data()
         else:

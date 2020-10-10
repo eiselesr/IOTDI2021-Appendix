@@ -60,7 +60,7 @@ class Allocator:
                     service_name=customer.service_name,
                     price=customer.price,
                     replicas=customer.replicas)
-                self.producer.send(allocation)
+                self.allocation_producer.send(allocation)
                 self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {suppliers}".encode("utf-8"))
         consumer.acknowledge(msg)
 

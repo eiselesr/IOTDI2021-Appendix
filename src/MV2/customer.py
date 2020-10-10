@@ -45,7 +45,7 @@ class Trader:
                                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
         # producer - input
-        self.input_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{self.service_name}/input")
+        #self.input_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{self.service_name}/input")
 
         # consumer - output
         self.output_consumer = self.client.subscribe(topic=f"persistent://{self.tenant}/{self.service_name}/output",
@@ -68,14 +68,15 @@ class Trader:
 
     def stream_data(self, window_start, window_end, allocationid):
         self.logger.send(f"customer-{self.tenant}: start sending data for ".encode("utf-8"))
-        #input_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{self.service_name}/input-{allocationid}")
+        input_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{self.service_name}/input-{allocationid}")
         while time.time() <= window_end:
             if time.time() >= window_start:
                 input_producer.send(str(random.randint(1, 10)).encode("utf-8"),
                                     properties={"timestamp": str(time.time()),
+                                                "allocationid": allocationid,
                                                 "msg-num": str(self.msg_num)})
                 self.msg_num += 1
-                time.sleep(.1)
+                time.sleep(1)
         self.logger.send(f"customer-{self.tenant}: ending sending data for allocationid {allocationid}, msg-num: {self.msg_num}".encode("utf-8"))
         input_producer.close()
 

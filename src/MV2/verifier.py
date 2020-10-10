@@ -37,19 +37,19 @@ class Verifier:
                                                          consumer_type=pulsar.ConsumerType.Exclusive,
                                                          message_listener=self.allocation_listener)
 
-        time.sleep(10)
+        time.sleep(5)
         while True:
-            expire_time = time.time() + cfg.window
-            expired_allocations = self.df_allocations[(self.df_allocations['end'] > expire_time)]
+            expire_time = time.time() + cfg.window * 2
+            expired_allocations = self.df_allocations[(self.df_allocations['end'] < expire_time)]
             if len(expired_allocations) > 0:
-                print(expired_allocations.head())
+                #print(expired_allocations.head())
                 remove = []
                 for k, v in expired_allocations.iterrows():
                     remove.append(k)
                     self.process(v)
                 self.df_allocations = self.df_allocations[~self.df_allocations['allocationid'].isin(remove)]
                 self.df_results = self.df_results[~self.df_results['allocationid'].isin(remove)]
-            time.sleep(10)
+            time.sleep(1)
 
     def stream_listener(self, consumer, msg):
         data = {'result': msg.value(),
@@ -95,7 +95,7 @@ class Verifier:
                 val = "none".encode("utf-8")
             else:
                 check_status = "pass"
-                val = str(temp['result'][0]).encode("utf-8")
+                val = str(temp[0]).encode("utf-8")
             result_producer.send(val, properties={"check-status": check_status, "msg-num": str(msg_num)})
         check_producer = self.client.create_producer(topic=f"persistent://{allocation['customer']}/{allocation['service_name']}/check-{allocation['allocationid']}",
                                                      schema=pulsar.schema.JsonSchema(schema.CheckSchema))
