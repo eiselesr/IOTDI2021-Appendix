@@ -2,7 +2,7 @@ import pulsar
 
 
 class OfferSchema(pulsar.schema.Record):
-    allocationid = pulsar.schema.String()
+    jobid = pulsar.schema.String()
     start = pulsar.schema.Float()
     end = pulsar.schema.Float()
     service_name = pulsar.schema.String()
@@ -12,9 +12,12 @@ class OfferSchema(pulsar.schema.Record):
     rate = pulsar.schema.Integer()
     price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
+    timestamp = pulsar.schema.Float()
+    allocationid = pulsar.schema.String()
 
 
 class AllocationSchema(pulsar.schema.Record):
+    jobid = pulsar.schema.String()
     allocationid = pulsar.schema.String()
     customer = pulsar.schema.String()
     suppliers = pulsar.schema.Array(pulsar.schema.String())
@@ -23,22 +26,39 @@ class AllocationSchema(pulsar.schema.Record):
     service_name = pulsar.schema.String()
     price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
+    timestamp = pulsar.schema.Float()
 
 
-class VerifierSchema(pulsar.schema.Record):
+class CheckSchema(pulsar.schema.Record):
     result = pulsar.schema.String()
     customer = pulsar.schema.String()
     suppliers = pulsar.schema.Array(pulsar.schema.String())
     service_name = pulsar.schema.String()
-    window = pulsar.schema.Integer()
-    num_messages = pulsar.schema.Integer()
-
-class CheckSchema(pulsar.schema.Record):
-    result = pulsar.schema.String()
-    status = pulsar.schema.String()
-    startmessage = pulsar.schema.Integer()
-    endmessage = pulsar.schema.Integer()
+    jobid = pulsar.schema.String()
     allocationid = pulsar.schema.String()
+    timestamp = pulsar.schema.Float()
+
+
+class InputDataSchema(pulsar.schema.Record):
+    value = pulsar.schema.Integer()
+    customer = pulsar.schema.String()
+    service_name = pulsar.schema.String()
+    jobid = pulsar.schema.String()
+    start = pulsar.schema.Float()
+    end = pulsar.schema.Float()
+    timestamp = pulsar.schema.Float()
+
+
+class OutputDataSchema(pulsar.schema.Record):
+    value = pulsar.schema.Integer()
+    customer = pulsar.schema.String()
+    service_name = pulsar.schema.String()
+    jobid = pulsar.schema.String()
+    start = pulsar.schema.Float()
+    end = pulsar.schema.Float()
+    supplier = pulsar.schema.String()
+    allocationid = pulsar.schema.String()
+    timestamp = pulsar.schema.Float()
 
 
 
