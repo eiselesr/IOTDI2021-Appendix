@@ -1,9 +1,4 @@
-FROM ubuntu:20.04
-RUN apt-get update && \
-  apt-get install -y software-properties-common && \
-  add-apt-repository ppa:deadsnakes/ppa
-RUN apt install -y python3
-RUN apt install -y python3-pip
-WORKDIR /code
-COPY . .
-RUN pip3 install -r requirements.txt
+FROM apachepulsar/pulsar:2.6.1
+WORKDIR /pulsar/connectors
+RUN curl -o "pulsar-io-data-generator-2.6.1.nar" "https://archive.apache.org/dist/pulsar/pulsar-2.6.1/connectors/pulsar-io-data-generator-2.6.1.nar"
+WORKDIR /pulsar

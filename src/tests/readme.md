@@ -1,10 +1,32 @@
-shell 1: run pulsar
+1a. start pulsar - docker:
 ```bash
 cd <MODiCuM-Streaming>/src
 docker rm -f $(docker ps -a -q)
 docker volume rm $(docker volume ls -q)
-docker-compose up
+
+docker build --tag "pulsar_standalone_image" -f Dockerfile .
+docker run -it \
+  --name pulsar_standalone \
+  -p 6650:6650 \
+  -p 8080:8080 \
+  -p 8081:8081 \
+  --mount source=pulsardata,target=/pulsar/data \
+  --mount source=pulsarconf,target=/pulsar/conf \
+  pulsar_standalone_image \
+  bin/pulsar standalone
 ```
+
+1b. start pulsar - standalone
+```bash
+cd <pulsar>
+bin/pulsar-daemon start standalone
+bin/pulsar sql-worker start
+
+# to stop
+bin/pulsar sql-worker stop
+bin/pulsar-daemon stop standalone
+```
+
 
 shell 2: run logger consumer
 ```bash
