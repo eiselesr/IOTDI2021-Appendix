@@ -15,23 +15,26 @@ class Fulfillment(pulsar.Function):
 
 
 class Trader:
-    def __init__(self, tenant, behavior, start_time, end_time):
+    def __init__(self, user, start, end, account="wallet", cpu=1E9, rate=1, price=0.000001, behavior='correct'):
         self.id = self.register()
-        self.tenant = tenant
+        self.user = user
+        self.start = start
+        self.end = end
+        self.account = account
+        self.cpu = cpu
+        self.rate = rate
+        self.price = price
         self.behavior = behavior
-        self.start_time = start_time
-        self.end_time = end_time
-        self.output_producer = None
 
         # create tenant
-        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant)
+        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.user)
 
-        # get client
+        # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
 
         # producer - logger
         self.logger = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
-        self.logger.send(f"supplier-{self.tenant}: initializing".encode("utf-8"))
+        self.logger.send(f"supplier-{self.user}: initializing".encode("utf-8"))
 
         # producer - supply offers
         self.supply_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers",
@@ -40,96 +43,99 @@ class Trader:
         # consumer - allocation topic
         self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
                                                          schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
-                                                         subscription_name="allocation{}".format(tenant),
+                                                         subscription_name=f"{self.user}-allocation-subscription",
                                                          initial_position=pulsar.InitialPosition.Earliest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive)
+
+        self.run()
 
     ### public methods ###
 
     def run(self):
-        while time.time() < self.end_time:
+        while time.time() < self.end:
             # post offer
             self.post_offer()
 
             # get allocation
             allocation = self.get_allocation()
-
-            # create namespace
-            PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=allocation.value().service_name)
+            self.logger.send(f"supplier-{self.user}: starting allocation {allocation.value().allocationid}".encode("utf-8"))
 
             # producer - output
-            self.output_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{allocation.value().service_name}/output-{allocation.value().allocationid}")
+            output_producer = self.client.create_producer(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/output",
+                                                          schema=pulsar.schema.JsonSchema(schema.OutputDataSchema))
 
             # consumer - input
-            input_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/input-{allocation.value().allocationid}",
-                                                   subscription_name=f"supplier-{self.tenant}-{allocation.value().allocationid}",
-                                                   initial_position=pulsar.InitialPosition.Earliest,
-                                                   consumer_type=pulsar.ConsumerType.Exclusive,
-                                                   message_listener=self.process_message)
-
-            # consumer - check
-            check_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/check",
-                                                   schema=pulsar.schema.JsonSchema(schema.CheckSchema),
-                                                   subscription_name=f"check-{self.tenant}-{allocation.value().allocationid}",
+            input_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/input",
+                                                   schema=pulsar.schema.JsonSchema(schema.InputDataSchema),
+                                                   subscription_name=f"{self.user}-input-{allocation.value().service_name}-{allocation.value().allocationid}",
                                                    initial_position=pulsar.InitialPosition.Earliest,
                                                    consumer_type=pulsar.ConsumerType.Exclusive)
 
-            # block on check
+            # process messages until allocation is finished
             while True:
                 try:
-                    timeout = (cfg.window+100000) * 1000
-                    msg = check_consumer.receive(timeout_millis=timeout)
-                    check_consumer.acknowledge(msg)
-                    if (msg.allocationid == allocation.allocationid) and (msg.status == "done"):
-                        self.logger.send(f"supplier-{self.tenant}: got done message from verifier for job {allocation.allocationid}".encode("utf-8"))
-                        break
-                except:
-                    if time.time() >= allocation.end:
-                        self.logger.send(f"supplier-{self.tenant}: timeout for {allocation.allocationid}".encode("utf-8"))
-                        break
+                    msg = input_consumer.receive(timeout_millis=15000)
+                    if (msg.value().timestamp >= allocation.value().start) and (msg.value().timestamp < allocation.value().end):
+                        value = self.process(msg.value().value)
 
-            # job is done, closeout
-            check_consumer.close()
-            time.sleep(5)
+                        output_data = schema.OutputDataSchema(
+                            value=value,
+                            customer=msg.value().customer,
+                            service_name=msg.value().service_name,
+                            jobid=msg.value().jobid,
+                            start=allocation.value().start,
+                            end=allocation.value().end,
+                            supplier=self.user,
+                            allocationid=allocation.value().allocationid,
+                            timestamp=msg.value().timestamp,
+                            msgnum=msg.value().msgnum
+                        )
+                        output_producer.send(output_data, properties={"content-type": "application/json"})
+                    input_consumer.acknowledge(msg)
+                    if msg.value().timestamp > allocation.value().end:
+                        break
+                except Exception as e:
+                    ee = repr(e)
+                    print(ee)
+                    self.logger.send(f"supplier-{self.user}: exception when reading input data - {ee}".encode("utf-8"))
+                    break
+            self.logger.send(f"supplier-{self.user}: finished allocation {allocation.value().allocationid}".encode("utf-8"))
             input_consumer.close()
-            self.output_producer.close()
-            self.output_producer = None
-            self.logger.send(f"supplier-{self.tenant}: done with job allocationid-{allocation.allocationid}".encode("utf-8"))
-        self.logger.send(f"supplier-{self.tenant}: run time over, shutting down".encode("utf-8"))
+            output_producer.close()
+        self.logger.send(f"supplier-{self.user}: supplier is done, shutting down".encode("utf-8"))
+        self.close()
 
     def post_offer(self):
         offer = schema.OfferSchema(
-            allocationid="NA",
-            start=0.0,
-            end=0.0,
+            jobid="NA",
+            start=self.start,
+            end=self.end,
             service_name="NA",
-            user=self.tenant,
-            account="wallet",
-            cpu=1E9,
-            rate=1,
-            price=0.000001,
-            replicas=-1
+            user=self.user,
+            account=self.account,
+            cpu=self.cpu,
+            rate=self.rate,
+            price=self.price,
+            replicas=-1,
+            timestamp=time.time(),
+            allocationid="NA"
         )
-        properties = {"content-type": "application/json"}
-        self.supply_offers_producer.send(offer, properties)
-        self.logger.send(f"supplier-{self.tenant}: sent an offer".encode("utf-8"))
+        self.supply_offers_producer.send(offer, {"content-type": "application/json"})
+        self.logger.send(f"supplier-{self.user}: sent an offer".encode("utf-8"))
 
     def get_allocation(self):
         while True:
             msg = self.allocation_consumer.receive()
-            if self.tenant in msg.value().suppliers:
-                self.logger.send(f"supplier-{self.tenant}: got an allocation for allocationid {msg.value().allocationid}".encode("utf-8"))
+            if self.user in msg.value().suppliers:
+                self.logger.send(f"supplier-{self.user}: got an allocation for allocationid {msg.value().allocationid}".encode("utf-8"))
                 return msg
 
-    def process_message(self, consumer, msg):
-        properties = {"msg-num": msg.properties()['msg-num'], "supplier": self.tenant, "allocationid": msg.properties()['allocationid']}
-        if self.behavior == "correct":
-            result = msg.data()
+    def process(self, value):
+        if self.behavior == 'correct':
+            result = value
         else:
-            result = str(random.randint(0, 10)).encode("utf-8")
-        self.output_producer.send(result, properties=properties)
-        self.logger.send(f"supplier-{self.tenant}: published result {result} this value is {self.behavior}".encode("utf-8"))
-        consumer.acknowledge(msg)
+            result = str(random.randint(0, 10))
+        return result
 
     def close(self):
         self.client.close()

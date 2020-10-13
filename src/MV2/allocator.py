@@ -52,6 +52,7 @@ class Allocator:
                     supplier = self.supplier_offers.pop(0)
                     suppliers.append(supplier.user)
                 allocation = schema.AllocationSchema(
+                    jobid=customer.jobid,
                     allocationid=customer.allocationid,
                     customer=customer.user,
                     suppliers=suppliers,
@@ -59,7 +60,8 @@ class Allocator:
                     end=customer.end,
                     service_name=customer.service_name,
                     price=customer.price,
-                    replicas=customer.replicas)
+                    replicas=customer.replicas,
+                    timestamp=time.time())
                 self.allocation_producer.send(allocation)
                 self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {suppliers}".encode("utf-8"))
         consumer.acknowledge(msg)

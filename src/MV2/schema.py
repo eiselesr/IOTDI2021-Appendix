@@ -47,6 +47,7 @@ class InputDataSchema(pulsar.schema.Record):
     start = pulsar.schema.Float()
     end = pulsar.schema.Float()
     timestamp = pulsar.schema.Float()
+    msgnum = pulsar.schema.Integer()
 
 
 class OutputDataSchema(pulsar.schema.Record):
@@ -59,6 +60,7 @@ class OutputDataSchema(pulsar.schema.Record):
     supplier = pulsar.schema.String()
     allocationid = pulsar.schema.String()
     timestamp = pulsar.schema.Float()
+    msgnum = pulsar.schema.Integer()
 
 
 

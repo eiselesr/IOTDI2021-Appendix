@@ -31,22 +31,25 @@ class Trader:
         self.replicas = replicas
 
         # register tenant and namespace with Pulsar
-        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant)
-        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url, tenant=self.tenant, namespace=self.service_name)
+        PulsarREST.create_tenant(pulsar_admin_url=cfg.pulsar_admin_url,
+                                 tenant=self.user)
+        PulsarREST.create_namespace(pulsar_admin_url=cfg.pulsar_admin_url,
+                                    tenant=self.user,
+                                    namespace=self.service_name)
 
-        # get pulsar client
+        # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
 
         # producer - logger
         self.logger = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
-        self.logger.send(f"customer-{self.tenant}: initializing".encode("utf-8"))
+        self.logger.send(f"customer-{self.user}: initializing".encode("utf-8"))
 
         # producer - customer_offers
         self.customer_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers",
                                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
         # producer - input
-        self.input_producer = self.client.create_producer(topic=f"persistent://{self.tenant}/{self.service_name}/input",
+        self.input_producer = self.client.create_producer(topic=f"persistent://{self.user}/{self.service_name}/input",
                                                           schema=pulsar.schema.JsonSchema(schema.InputDataSchema))
 
         # post offers
@@ -59,6 +62,7 @@ class Trader:
 
     def stream_data(self):
         self.logger.send(f"customer-{self.user}: start sending data for service_name: {self.service_name}, jobid: {self.jobid}".encode("utf-8"))
+        count = 0
         while time.time() < self.end:
             if time.time() >= self.start:
                 data = schema.InputDataSchema(
@@ -68,9 +72,11 @@ class Trader:
                     jobid=self.jobid,
                     start=self.start,
                     end=self.end,
-                    timestamp=time.time()
+                    timestamp=time.time(),
+                    msgnum=count
                 )
                 self.input_producer.send(data, properties={"content-type": "application/json"})
+                count += 1
             time.sleep(1)
         self.logger.send(f"customer-{self.user}: done sending data for service_name: {self.service_name}, jobid: {self.jobid}".encode("utf-8"))
         self.input_producer.close()
