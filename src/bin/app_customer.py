@@ -1,51 +1,77 @@
 import time
 import argparse
+import uuid
 from MV2 import *
+
+
+def run(jobid,
+        start,
+        end,
+        service_name,
+        user,
+        replicas):
+    c = customer.Trader(jobid=jobid,
+                        start=start,
+                        end=end,
+                        service_name=service_name,
+                        user=user,
+                        replicas=int(replicas))
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="customer")
 
-    parser.add_argument("-t",
-                        "--tenant",
-                        help="tenant")
+    parser.add_argument("-i",
+                        "--jobid",
+                        help="jobid",
+                        default="none")
+
+    parser.add_argument("-s",
+                        "--start",
+                        help="start time",
+                        default="none")
+
+    parser.add_argument("-e",
+                        "--end",
+                        help="end time",
+                        default="none")
+
+    parser.add_argument("-sn",
+                        "--service_name",
+                        help="service name",
+                        default="rand_nums")
+
+    parser.add_argument("-u",
+                        "--user",
+                        help="tenant",
+                        default="c1")
 
     parser.add_argument("-r",
                         "--replicas",
-                        help="number of replicas")
-
-    parser.add_argument("-a",
-                        "--service_name",
-                        help="name of service")
-
-    parser.add_argument("-st",
-                        "--start_time",
-                        help="start time in seconds",
-                        default="none")
-
-    parser.add_argument("-et",
-                        "--end_time",
-                        help="end time in seconds",
-                        default="none")
-
+                        help="number of replicas",
+                        default="2")
 
     args = parser.parse_args()
 
-    if args.start_time=="none":
-        start_time = time.time()
+    if args.start=="none":
+        start = time.time() + 30
     else:
-        start_time = float(args.start_time)
+        start = float(args.start)
 
-    if args.end_time=="none":
-        end_time = time.time() + 600
+    if args.end=="none":
+        end = start + 600
     else:
-        end_time = float(args.end_time)
+        end = float(args.end)
 
-    c = customer.Trader(tenant=args.tenant,
-                        replicas=int(args.replicas),
-                        service_name=args.service_name,
-                        start_time=start_time,
-                        end_time=end_time)
+    if args.jobid=="none":
+        jobid = str(uuid.uuid4())
+    else:
+        jobid = args.jobid
 
-    c.run()
-    c.close()
+    run(jobid=jobid,
+        start=start,
+        end=end,
+        service_name=args.service_name,
+        user=args.user,
+        replicas=args.replicas)
+

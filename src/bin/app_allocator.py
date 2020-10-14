@@ -2,5 +2,8 @@ import time
 from MV2 import *
 
 
-if __name__=="__main__":
+def run():
     a = allocator.Allocator()
+
+if __name__=="__main__":
+    run()

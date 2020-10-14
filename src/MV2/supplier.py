@@ -15,7 +15,15 @@ class Fulfillment(pulsar.Function):
 
 
 class Trader:
-    def __init__(self, user, start, end, account="wallet", cpu=1E9, rate=1, price=0.000001, behavior='correct'):
+    def __init__(self,
+                 user,
+                 start,
+                 end,
+                 account="wallet",
+                 cpu=1E9,
+                 rate=1,
+                 price=0.000001,
+                 behavior='correct'):
         self.id = self.register()
         self.user = user
         self.start = start
@@ -44,7 +52,7 @@ class Trader:
         self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
                                                          schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
                                                          subscription_name=f"{self.user}-allocation-subscription",
-                                                         initial_position=pulsar.InitialPosition.Earliest,
+                                                         initial_position=pulsar.InitialPosition.Latest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive)
 
         self.run()
@@ -74,7 +82,7 @@ class Trader:
             # process messages until allocation is finished
             while True:
                 try:
-                    msg = input_consumer.receive(timeout_millis=15000)
+                    msg = input_consumer.receive()
                     if (msg.value().timestamp >= allocation.value().start) and (msg.value().timestamp < allocation.value().end):
                         value = self.process(msg.value().value)
 
@@ -96,7 +104,7 @@ class Trader:
                         break
                 except Exception as e:
                     ee = repr(e)
-                    print(ee)
+                    print(f"supplier-{self.user}: {ee}")
                     self.logger.send(f"supplier-{self.user}: exception when reading input data - {ee}".encode("utf-8"))
                     break
             self.logger.send(f"supplier-{self.user}: finished allocation {allocation.value().allocationid}".encode("utf-8"))
@@ -126,6 +134,7 @@ class Trader:
     def get_allocation(self):
         while True:
             msg = self.allocation_consumer.receive()
+            self.allocation_consumer.acknowledge(msg)
             if self.user in msg.value().suppliers:
                 self.logger.send(f"supplier-{self.user}: got an allocation for allocationid {msg.value().allocationid}".encode("utf-8"))
                 return msg

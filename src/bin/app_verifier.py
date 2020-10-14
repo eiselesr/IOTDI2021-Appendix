@@ -4,15 +4,17 @@ import argparse
 from MV2 import *
 
 
-if __name__=="__main__":
-    parser = argparse.ArgumentParser(description="supplier")
+def run(user):
+    v = verifier.Verifier(user=user)
 
-    parser.add_argument("-t",
-                        "--tenant",
+
+if __name__=="__main__":
+    parser = argparse.ArgumentParser(description="verifier")
+
+    parser.add_argument("-u",
+                        "--user",
                         help="tenant",
                         default='v1')
 
-
     args = parser.parse_args()
-
-    s = verifier.Verifier(tenant=args.tenant)
+    run(user=args.user)

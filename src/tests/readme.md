@@ -35,7 +35,7 @@ python app.py \
     --pulsar_url "pulsar://localhost:6650" \
     --tenant "public" \
     --namespace "default" \
-    --topic "logger" \
+    --topic "logger2" \
     --timeout "none"
 ```
 

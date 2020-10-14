@@ -1,9 +1,10 @@
-import re
 import pulsar
 import pandas as pd
 import time
 import threading
-from . import cfg, schema, PulsarREST
+from copy import deepcopy
+from . import cfg, schema, PulsarREST, queries
+
 
 class Verifier:
     def __init__(self, user):
@@ -30,20 +31,18 @@ class Verifier:
         self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
                                                          schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
                                                          subscription_name=f"{self.user}-allocation-subscription",
-                                                         initial_position=pulsar.InitialPosition.Earliest,
+                                                         initial_position=pulsar.InitialPosition.Latest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive,
                                                          message_listener=self.allocation_listener)
 
-        flush_time = time.time() + 10
+        # periodically check for expired allocations
         while True:
-            if time.time() >= flush_time:
-                t = threading.Thread(target=thread_function)
-                t.start()
-                t.join()
-                flush_time = time.time() + 10
-
+            t = threading.Thread(target=self.flush_allocations)
+            t.start()
+            t.join()
 
     def allocation_listener(self, consumer, msg):
+        consumer.acknowledge(msg)
         self.logger.send(f"verifier: got an allocation {msg.value().allocationid}".encode("utf-8"))
         data = {"jobid": msg.value().jobid,
                 "allocationid": msg.value().allocationid,
@@ -53,7 +52,45 @@ class Verifier:
                 "end": msg.value().end,
                 "service_name": msg.value().service_name,
                 "price": msg.value().price,
-                "replicas": msg.values().replicas,
+                "replicas": msg.value().replicas,
                 "timestamp": msg.value().timestamp}
         self.df_allocations = self.df_allocations.append(data, ignore_index=True)
-        consumer.acknowledge(msg)
+
+    def flush_allocations(self):
+        time.sleep(10)
+        df = deepcopy(self.df_allocations)
+        expired_allocations = df.loc[df['end'] < time.time()+11]
+        if len(expired_allocations) > 0:
+            for k, allocation in expired_allocations.iterrows():
+                self.verify(allocation)
+            expired_allocationids = expired_allocations['allocationid'].tolist()
+            self.df_allocations = self.df_allocations[~self.df_allocations['allocationid'].isin(expired_allocationids)]
+            self.logger.send(f"verifier: verified allocations {expired_allocationids}".encode("utf-8"))
+
+    def verify(self, allocation):
+        query = "SELECT * FROM output WHERE allocationid = '{}'".format(allocation['allocationid'])
+        df = queries.presto_query(query,
+                                  user='verifier',
+                                  schema="{}/{}".format(allocation['customer'], allocation['service_name']))
+        result = 'pass'
+        for msgnum in df['msgnum'].unique():
+            temp = df.loc[df['msgnum']==msgnum, 'value']
+            if len(temp.unique()) != 1:
+                result = "fail"
+                break
+
+        # write to check topic
+        producer = self.client.create_producer(topic="persistent://{}/{}/check".format(allocation['customer'], allocation['service_name']),
+                                               schema=pulsar.schema.JsonSchema(schema.CheckSchema))
+        data = schema.CheckSchema(
+            result = result,
+            customer=allocation['customer'],
+            suppliers=allocation['suppliers'],
+            service_name=allocation['service_name'],
+            jobid=allocation['jobid'],
+            allocationid=allocation['allocationid'],
+            timestamp=time.time()
+        )
+        producer.send(data)
+        producer.close()
+
