@@ -4,46 +4,46 @@ import argparse
 from MV2 import *
 
 
+def run(user, start, end, behavior):
+    s = supplier.Trader(user=user,
+                        start=start,
+                        end=end,
+                        behavior=behavior)
+
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="supplier")
 
-    parser.add_argument("-t",
-                        "--tenant",
+    parser.add_argument("-s",
+                        "--start",
+                        help="start time",
+                        default="none")
+
+    parser.add_argument("-e",
+                        "--end",
+                        help="end time",
+                        default="none")
+
+    parser.add_argument("-u",
+                        "--user",
                         help="tenant",
-                        default='s1')
+                        default="s1")
 
     parser.add_argument("-b",
                         "--behavior",
-                        help="correct or cheat",
-                        default='correct')
-
-    parser.add_argument("-st",
-                        "--start_time",
-                        help="start time in seconds",
-                        default="none")
-
-    parser.add_argument("-et",
-                        "--end_time",
-                        help="end time in seconds",
-                        default="none")
-
+                        help="correct or fail",
+                        default="correct")
 
     args = parser.parse_args()
 
-    if args.start_time=="none":
-        start_time = time.time()
+    if args.start=="none":
+        start = time.time() + 30
     else:
-        start_time = float(args.start_time)
+        start = float(args.start)
 
-    if args.end_time=="none":
-        end_time = time.time() + 600
+    if args.end=="none":
+        end = start + 600
     else:
-        end_time = float(args.end_time)
+        end = float(args.end)
 
-    s = supplier.Trader(tenant=args.tenant,
-                        behavior=args.behavior,
-                        start_time=start_time,
-                        end_time=end_time)
-
-    s.run()
-    s.close()
+    run(user=args.user, start=start, end=end, behavior=args.behavior)

@@ -27,13 +27,14 @@ class Allocator:
         # consumer - supply and customer offers
         self.offer_consumer = self.client.subscribe(topic=re.compile(f"persistent://{cfg.tenant}/{cfg.namespace}/.*_offers"),
                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema),
-                                                    subscription_name="offer-sub",
-                                                    initial_position=pulsar.InitialPosition.Earliest,
+                                                    subscription_name="offer-sub-2",
+                                                    initial_position=pulsar.InitialPosition.Latest,
                                                     message_listener=self.offer_listener)
         while True:
             time.sleep(0.1)
 
     def offer_listener(self, consumer, msg):
+        consumer.acknowledge(msg)
         self.logger.send(f"allocator: got a an offer with topic_name {msg.topic_name()}".encode("utf-8"))
 
         # see if customer or supply offers, then append to corresponding stack
@@ -64,7 +65,6 @@ class Allocator:
                     timestamp=time.time())
                 self.allocation_producer.send(allocation)
                 self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {suppliers}".encode("utf-8"))
-        consumer.acknowledge(msg)
 
     def register(self):
         # blockchain shenanigans

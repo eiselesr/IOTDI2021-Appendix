@@ -95,6 +95,7 @@ class Trader:
             self.post_offer(allocationid, window_start, window_end)
             window_start = deepcopy(window_end)
         self.logger.send(f"customer-{self.user}: done sending offers on service_name: {self.service_name}, jobid: {self.jobid}".encode("utf-8"))
+        print(f"customer-{self.user}: done sending all offers")
 
     def post_offer(self, allocationid, window_start, window_end):
         offer = schema.OfferSchema(

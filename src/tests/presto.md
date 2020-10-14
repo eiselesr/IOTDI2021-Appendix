@@ -18,4 +18,8 @@ Generate some data
 ./bin/pulsar-admin sources create --name generator --destinationTopicName generator_test --source-type data-generator
 ```
 
+Connect to command line
+```bash
+bin/pulsar sql
+```
 Test it: see notebook in <MODiCuM-Streaming>/notebooks/presto_sql.ipynb
