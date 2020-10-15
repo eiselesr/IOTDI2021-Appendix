@@ -17,13 +17,7 @@ class Fulfillment(pulsar.Function):
 class Trader:
     def __init__(self,
                  user,
-                 start,
-                 end,
-                 account="wallet",
-                 cpu=1E9,
-                 rate=1,
-                 price=0.000001,
-                 behavior='correct'):
+                 behavior_probability=.5):
         self.id = self.register()
         self.user = user
         self.start = start

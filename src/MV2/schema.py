@@ -2,65 +2,51 @@ import pulsar
 
 
 class OfferSchema(pulsar.schema.Record):
-    jobid = pulsar.schema.String()
-    start = pulsar.schema.Float()
-    end = pulsar.schema.Float()
-    service_name = pulsar.schema.String()
     user = pulsar.schema.String()
-    account = pulsar.schema.String()
-    cpu = pulsar.schema.Float()
-    rate = pulsar.schema.Integer()
-    price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
-    timestamp = pulsar.schema.Float()
     allocationid = pulsar.schema.String()
+    customerbehavior = pulsar.schema.String()
+    b = pulsar.schema.Float()
+    lam = pulsar.schema.Integer()
+    pi_s = pulsar.schema.Float()
+    supplierbehavior = pulsar.schema.String()
 
 
 class AllocationSchema(pulsar.schema.Record):
-    jobid = pulsar.schema.String()
-    allocationid = pulsar.schema.String()
     customer = pulsar.schema.String()
-    suppliers = pulsar.schema.Array(pulsar.schema.String())
-    start = pulsar.schema.Float()
-    end = pulsar.schema.Float()
-    service_name = pulsar.schema.String()
-    price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
-    timestamp = pulsar.schema.Float()
-
-
-class CheckSchema(pulsar.schema.Record):
-    result = pulsar.schema.String()
-    customer = pulsar.schema.String()
-    suppliers = pulsar.schema.Array(pulsar.schema.String())
-    service_name = pulsar.schema.String()
-    jobid = pulsar.schema.String()
     allocationid = pulsar.schema.String()
-    timestamp = pulsar.schema.Float()
-
-
-class InputDataSchema(pulsar.schema.Record):
-    value = pulsar.schema.Integer()
-    customer = pulsar.schema.String()
-    service_name = pulsar.schema.String()
-    jobid = pulsar.schema.String()
-    start = pulsar.schema.Float()
-    end = pulsar.schema.Float()
-    timestamp = pulsar.schema.Float()
-    msgnum = pulsar.schema.Integer()
-
-
-class OutputDataSchema(pulsar.schema.Record):
-    value = pulsar.schema.Integer()
-    customer = pulsar.schema.String()
-    service_name = pulsar.schema.String()
-    jobid = pulsar.schema.String()
-    start = pulsar.schema.Float()
-    end = pulsar.schema.Float()
+    customerbehavior = pulsar.schema.String()
+    b = pulsar.schema.Float()
+    lam = pulsar.schema.Integer()
+    pi_s = pulsar.schema.Float()
     supplier = pulsar.schema.String()
+    supplierbehavior = pulsar.schema.String()
+    outcome = pulsar.schema.String()
+    mediator = pulsar.schema.String()
+
+
+class PayoutSchema(pulsar.schema.Record):
+    customer = pulsar.schema.String()
+    supplier = pulsar.schema.String()
+    customerpay = pulsar.schema.Float()
+    supplierpay = pulsar.schema.Float()
+    mediatorpay = pulsar.schema.Float()
+    outcome = pulsar.schema.String()
     allocationid = pulsar.schema.String()
-    timestamp = pulsar.schema.Float()
-    msgnum = pulsar.schema.Integer()
+    customerbehavior = pulsar.schema.String()
+    supplierbehavior = pulsar.schema.String()
+    payoutid = pulsar.schema.String()
+
+
+class TransactionSchema(pulsar.schema.Record):
+    user = pulsar.schema.String()
+    change = pulsar.schema.Float()
+    balance = pulsar.schema.Float()
+    payoutid = pulsar.schema.String()
+
+
+
 
 
 
