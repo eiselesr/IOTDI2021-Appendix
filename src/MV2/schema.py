@@ -22,8 +22,7 @@ class AllocationSchema(pulsar.schema.Record):
     pi_s = pulsar.schema.Float()
     supplier = pulsar.schema.String()
     supplierbehavior = pulsar.schema.String()
-    outcome = pulsar.schema.String()
-    mediator = pulsar.schema.String()
+    payoutid = pulsar.schema.String()
 
 
 class PayoutSchema(pulsar.schema.Record):
@@ -32,6 +31,7 @@ class PayoutSchema(pulsar.schema.Record):
     customerpay = pulsar.schema.Float()
     supplierpay = pulsar.schema.Float()
     mediatorpay = pulsar.schema.Float()
+    allocatorpay = pulsar.schema.Float()
     outcome = pulsar.schema.String()
     allocationid = pulsar.schema.String()
     customerbehavior = pulsar.schema.String()

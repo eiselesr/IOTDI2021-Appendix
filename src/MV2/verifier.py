@@ -3,33 +3,37 @@ import pandas as pd
 import time
 import threading
 from copy import deepcopy
-from . import cfg, schema, PulsarREST, queries
+from . import cfg, schema, PulsarREST, queries, game
 
 
 class Verifier:
-    def __init__(self, user):
+    def __init__(self, user="verifier"):
         self.user = user
-        self.df_allocations = pd.DataFrame(columns=['jobid',
-                                                    'allocationid',
-                                                    'customer',
-                                                    'suppliers',
-                                                    'start',
-                                                    'end',
-                                                    'service_name',
-                                                    'price',
-                                                    'replicas',
-                                                    'timestamp'])
+        self.df_allocations = pd.DataFrame(columns=["customer",
+                                                    "replicas",
+                                                    "allocationid",
+                                                    "customerbehavior",
+                                                    "b",
+                                                    "lam",
+                                                    "pi_s",
+                                                    "supplier",
+                                                    "supplierbehavior",
+                                                    "payoutid"])
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
 
         # producer - logger
         self.logger = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/{cfg.logger_topic}")
-        self.logger.send(f"verifier: initializing".encode("utf-8"))
+        self.logger.send(f"verifier-{self.user}: initializing".encode("utf-8"))
 
-        # consumer - allocation topic
+        # producer - payouts
+        self.payouts_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
+                                                            schema=pulsar.schema.JsonSchema(schema.PayoutSchema))
+
+        # subscribe - allocations
         self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
-                                                         schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
+                                                         schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                          subscription_name=f"{self.user}-allocation-subscription",
                                                          initial_position=pulsar.InitialPosition.Latest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive,
@@ -43,54 +47,44 @@ class Verifier:
 
     def allocation_listener(self, consumer, msg):
         consumer.acknowledge(msg)
-        self.logger.send(f"verifier: got an allocation {msg.value().allocationid}".encode("utf-8"))
-        data = {"jobid": msg.value().jobid,
-                "allocationid": msg.value().allocationid,
-                "customer": msg.value().customer,
-                "suppliers": msg.value().suppliers,
-                "start": msg.value().start,
-                "end": msg.value().end,
-                "service_name": msg.value().service_name,
-                "price": msg.value().price,
+        data = {"customer": msg.value().customer,
                 "replicas": msg.value().replicas,
-                "timestamp": msg.value().timestamp}
-        self.df_allocations = self.df_allocations.append(data, ignore_index=True)
+                "allocationid": msg.value().allocationid,
+                "customerbehavior": msg.value().customerbehavior,
+                "b": msg.value().b,
+                "lam": msg.value().lam,
+                "pi_s": msg.value().pi_s,
+                "supplier": msg.value().supplier,
+                "supplierbehavior": msg.value().supplierbehavior,
+                "payoutid": msg.value().payoutid}
+        self.df_allocations.append(data, ignore_index=True)
 
     def flush_allocations(self):
-        time.sleep(10)
+        time.sleep(5)
         df = deepcopy(self.df_allocations)
-        expired_allocations = df.loc[df['end'] < time.time()+11]
-        if len(expired_allocations) > 0:
-            for k, allocation in expired_allocations.iterrows():
-                self.verify(allocation)
-            expired_allocationids = expired_allocations['allocationid'].tolist()
-            self.df_allocations = self.df_allocations[~self.df_allocations['allocationid'].isin(expired_allocationids)]
-            self.logger.send(f"verifier: verified allocations {expired_allocationids}".encode("utf-8"))
+        if len(df) > 0:
+            allocations_to_remove = []
+            for allocationid in df['allocationid'].unique():
+                allocation = df[df['allocationid']==allocationid]
+                if len(allocation) == allocation['replicas'].tolist()[0]:
+                    allocations_to_remove.append(allocationid)
+                    self.payout(allocation)
+            self.df_allocations = self.df_allocations[~self.df_allocations['allocationid'].isin(allocations_to_remove)]
+            self.logger.send(f"verifier: verified allocations {allocations_to_remove}".encode("utf-8"))
 
-    def verify(self, allocation):
-        query = "SELECT * FROM output WHERE allocationid = '{}'".format(allocation['allocationid'])
-        df = queries.presto_query(query,
-                                  user='verifier',
-                                  schema="{}/{}".format(allocation['customer'], allocation['service_name']))
-        result = 'pass'
-        for msgnum in df['msgnum'].unique():
-            temp = df.loc[df['msgnum']==msgnum, 'value']
-            if len(temp.unique()) != 1:
-                result = "fail"
-                break
-
-        # write to check topic
-        producer = self.client.create_producer(topic="persistent://{}/{}/check".format(allocation['customer'], allocation['service_name']),
-                                               schema=pulsar.schema.JsonSchema(schema.CheckSchema))
-        data = schema.CheckSchema(
-            result = result,
-            customer=allocation['customer'],
-            suppliers=allocation['suppliers'],
-            service_name=allocation['service_name'],
-            jobid=allocation['jobid'],
-            allocationid=allocation['allocationid'],
-            timestamp=time.time()
-        )
-        producer.send(data)
-        producer.close()
-
+    def payout(self, allocation):
+        for k, v in allocation.iterrows():
+            data = schema.PayoutSchema(
+                customer=v['customer'],
+                supplier=v['supplier'],
+                customerpay=game.get_customer_pay(),
+                supplierpay=game.get_supplier_pay(),
+                mediatorpay=game.get_mediator_pay(),
+                allocatorpay=game.get_allocator_pay(),
+                outcome=game.get_game_outcome(),
+                allocationid=v['allocationid'],
+                customerbehavior=v['customerbehavior'],
+                supplierbehavior=v['supplierbehavior'],
+                payoutid=v['payoutid']
+            )
+            self.payouts_producer.send(data)

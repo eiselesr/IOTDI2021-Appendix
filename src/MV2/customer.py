@@ -33,7 +33,7 @@ class Trader:
 
         # subscribe - payouts
         self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
-                                                     schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
+                                                     schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                      subscription_name=f"{self.user}-payouts-subscription",
                                                      initial_position=pulsar.InitialPosition.Latest,
                                                      consumer_type=pulsar.ConsumerType.Exclusive,
