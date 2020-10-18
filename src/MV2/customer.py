@@ -39,6 +39,7 @@ class Trader:
                                                      consumer_type=pulsar.ConsumerType.Exclusive,
                                                      message_listener=self.payout_listener)
 
+
     def close(self):
         self.client.close()
 

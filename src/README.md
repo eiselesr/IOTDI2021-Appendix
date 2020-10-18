@@ -11,9 +11,11 @@ the pulsar team.
 ```bash
 cd <MODiCuM-Streaming>
 wget https://archive.apache.org/dist/pulsar/pulsar-2.6.1/apache-pulsar-2.6.1-bin.tar.gz
+tar -xzvf apache-pulsar-2.6.1-bin.tar.gz
 cd apache-pulsar-2.6.1
 
 # start pulsar standalone
+rm -rf data
 bin/pulsar-daemon start standalone
 
 # start Presto SQL worker
