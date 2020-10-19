@@ -10,7 +10,7 @@ class Trader:
     def __init__(self,
                  user,
                  balance,
-                 behavior_probability=.5):
+                 behavior_probability):
         self.user = user
         self.balance = balance
         self.behavior_probability = behavior_probability
@@ -68,10 +68,9 @@ class Trader:
             replicas=-1,
             allocationid="NA",
             customerbehavior="NA",
-            b=float(-1),
-            lam=-1,
-            pi_s=float(-1),
-            supplierbehavior=self.behavior()
+            supplierbehavior=self.behavior(),
+            customerbehaviorprob=-1.0,
+            supplierbehaviorprob=self.behavior_probability
         )
         self.supply_offers_producer.send(offer, properties={"content-type": "application/json"})
         self.logger.send(f"supplier-{self.user}: sent job offer offer".encode("utf-8"))

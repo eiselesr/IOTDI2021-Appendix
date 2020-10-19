@@ -6,17 +6,11 @@ from MV2 import *
 
 def run(user,
         balance,
-        b,
-        pi_s,
-        lam,
         replicas,
         behavior_probability,
         num_jobs):
     c = customer.Trader(user=user,
                         balance=float(balance),
-                        b=float(b),
-                        pi_s=float(pi_s),
-                        lam=float(lam),
                         replicas=int(replicas),
                         behavior_probability=float(behavior_probability),
                         num_jobs=int(num_jobs))
@@ -33,21 +27,6 @@ if __name__=="__main__":
     parser.add_argument("-ba",
                         "--balance",
                         help="balance",
-                        default="100")
-
-    parser.add_argument("-b",
-                        "--b_val",
-                        help="benefit",
-                        default="100")
-
-    parser.add_argument("-i",
-                        "--pi_s",
-                        help="supplier cost",
-                        default="100")
-
-    parser.add_argument("-l",
-                        "--lam",
-                        help="lam",
                         default="100")
 
     parser.add_argument("-r",
@@ -69,9 +48,6 @@ if __name__=="__main__":
 
     run(args.user,
         args.balance,
-        args.b_val,
-        args.pi_s,
-        args.lam,
         args.replicas,
         args.behavior_probability,
         args.num_jobs)

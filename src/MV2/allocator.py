@@ -68,12 +68,11 @@ class Allocator:
                         replicas=customer.replicas,
                         allocationid=customer.allocationid,
                         customerbehavior=customer.customerbehavior,
-                        b=customer.b,
-                        lam=customer.lam,
-                        pi_s=customer.pi_s,
                         supplier=supplier.user,
                         supplierbehavior=supplier.supplierbehavior,
-                        payoutid=str(uuid.uuid4())
+                        payoutid=str(uuid.uuid4()),
+                        customerbehaviorprob=customer.customerbehaviorprob,
+                        supplierbehaviorprob=supplier.supplierbehaviorprob
                     )
                     self.allocation_producer.send(allocation)
                     self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {supplier.user}".encode("utf-8"))

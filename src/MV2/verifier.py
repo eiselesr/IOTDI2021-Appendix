@@ -13,12 +13,11 @@ class Verifier:
                                                     "replicas",
                                                     "allocationid",
                                                     "customerbehavior",
-                                                    "b",
-                                                    "lam",
-                                                    "pi_s",
                                                     "supplier",
                                                     "supplierbehavior",
-                                                    "payoutid"])
+                                                    "payoutid",
+                                                    "customerbehaviorprob",
+                                                    "supplierbehaviorprob"])
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
@@ -51,12 +50,11 @@ class Verifier:
                 "replicas": msg.value().replicas,
                 "allocationid": msg.value().allocationid,
                 "customerbehavior": msg.value().customerbehavior,
-                "b": msg.value().b,
-                "lam": msg.value().lam,
-                "pi_s": msg.value().pi_s,
                 "supplier": msg.value().supplier,
                 "supplierbehavior": msg.value().supplierbehavior,
-                "payoutid": msg.value().payoutid}
+                "payoutid": msg.value().payoutid,
+                "customerbehaviorprob": msg.value().customerbehaviorprob,
+                "supplierbehaviorprob": msg.value().supplierbehaviorprob}
         self.df_allocations.append(data, ignore_index=True)
 
     def flush_allocations(self):
@@ -85,6 +83,8 @@ class Verifier:
                 allocationid=v['allocationid'],
                 customerbehavior=v['customerbehavior'],
                 supplierbehavior=v['supplierbehavior'],
-                payoutid=v['payoutid']
+                payoutid=v['payoutid'],
+                customerbehaviorprob=v['customerbehaviorprob'],
+                supplierbehaviorprob=v['supplierbehaviorprob']
             )
             self.payouts_producer.send(data)

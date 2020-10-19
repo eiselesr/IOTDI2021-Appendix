@@ -6,10 +6,9 @@ class OfferSchema(pulsar.schema.Record):
     replicas = pulsar.schema.Integer()
     allocationid = pulsar.schema.String()
     customerbehavior = pulsar.schema.String()
-    b = pulsar.schema.Float()
-    lam = pulsar.schema.Integer()
-    pi_s = pulsar.schema.Float()
     supplierbehavior = pulsar.schema.String()
+    customerbehaviorprob = pulsar.schema.Float()
+    supplierbehaviorprob = pulsar.schema.Float()
 
 
 class AllocationSchema(pulsar.schema.Record):
@@ -17,12 +16,11 @@ class AllocationSchema(pulsar.schema.Record):
     replicas = pulsar.schema.Integer()
     allocationid = pulsar.schema.String()
     customerbehavior = pulsar.schema.String()
-    b = pulsar.schema.Float()
-    lam = pulsar.schema.Integer()
-    pi_s = pulsar.schema.Float()
     supplier = pulsar.schema.String()
     supplierbehavior = pulsar.schema.String()
     payoutid = pulsar.schema.String()
+    customerbehaviorprob = pulsar.schema.Float()
+    supplierbehaviorprob = pulsar.schema.Float()
 
 
 class PayoutSchema(pulsar.schema.Record):
@@ -37,6 +35,8 @@ class PayoutSchema(pulsar.schema.Record):
     customerbehavior = pulsar.schema.String()
     supplierbehavior = pulsar.schema.String()
     payoutid = pulsar.schema.String()
+    customerbehaviorprob = pulsar.schema.Float()
+    supplierbehaviorprob = pulsar.schema.Float()
 
 
 class TransactionSchema(pulsar.schema.Record):
