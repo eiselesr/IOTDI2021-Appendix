@@ -32,7 +32,7 @@ class Verifier:
 
         # subscribe - allocations
         self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
-                                                         schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
+                                                         schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
                                                          subscription_name=f"{self.user}-allocation-subscription",
                                                          initial_position=pulsar.InitialPosition.Latest,
                                                          consumer_type=pulsar.ConsumerType.Exclusive,
@@ -40,12 +40,13 @@ class Verifier:
 
         # periodically check for expired allocations
         while True:
-            t = threading.Thread(target=self.flush_allocations)
-            t.start()
-            t.join()
+            time.sleep(0.1)
+            # t = threading.Thread(target=self.flush_allocations)
+            # t.start()
+            # t.join()
 
     def allocation_listener(self, consumer, msg):
-        consumer.acknowledge(msg)
+        self.logger.send(f"verifier-{self.user}: got an allocation".encode("utf-8"))
         data = {"customer": msg.value().customer,
                 "replicas": msg.value().replicas,
                 "allocationid": msg.value().allocationid,
@@ -55,10 +56,11 @@ class Verifier:
                 "payoutid": msg.value().payoutid,
                 "customerbehaviorprob": msg.value().customerbehaviorprob,
                 "supplierbehaviorprob": msg.value().supplierbehaviorprob}
-        self.df_allocations.append(data, ignore_index=True)
+        self.df_allocations = self.df_allocations.append(data, ignore_index=True)
+        self.flush_allocations()
+        consumer.acknowledge(msg)
 
     def flush_allocations(self):
-        time.sleep(5)
         df = deepcopy(self.df_allocations)
         if len(df) > 0:
             allocations_to_remove = []
@@ -68,18 +70,19 @@ class Verifier:
                     allocations_to_remove.append(allocationid)
                     self.payout(allocation)
             self.df_allocations = self.df_allocations[~self.df_allocations['allocationid'].isin(allocations_to_remove)]
-            self.logger.send(f"verifier: verified allocations {allocations_to_remove}".encode("utf-8"))
+            #self.logger.send(f"verifier: verified allocations {allocations_to_remove}".encode("utf-8"))
 
     def payout(self, allocation):
         for k, v in allocation.iterrows():
+            outcome = game.get_game_outcome(v)
             data = schema.PayoutSchema(
                 customer=v['customer'],
                 supplier=v['supplier'],
-                customerpay=game.get_customer_pay(v),
-                supplierpay=game.get_supplier_pay(v),
-                mediatorpay=game.get_mediator_pay(v),
-                allocatorpay=game.get_allocator_pay(v),
-                outcome=game.get_game_outcome(v),
+                customerpay=game.get_customer_pay(outcome),
+                supplierpay=game.get_supplier_pay(outcome),
+                mediatorpay=game.get_mediator_pay(outcome),
+                allocatorpay=game.get_allocator_pay(outcome),
+                outcome=outcome,
                 allocationid=v['allocationid'],
                 customerbehavior=v['customerbehavior'],
                 supplierbehavior=v['supplierbehavior'],

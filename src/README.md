@@ -14,12 +14,15 @@ wget https://archive.apache.org/dist/pulsar/pulsar-2.6.1/apache-pulsar-2.6.1-bin
 tar -xzvf apache-pulsar-2.6.1-bin.tar.gz
 cd apache-pulsar-2.6.1
 
-# start pulsar standalone
+# pulsar standalone
 rm -rf data
 bin/pulsar-daemon start standalone
+bin/pulsar-daemon stop standalone
+bin/pulsar standalone
 
-# start Presto SQL worker
+# Presto
 bin/pulsar sql-worker start
+bin/pulsar sql-worker stop
 ```
 
 ### 1.2: Pulsar Docker

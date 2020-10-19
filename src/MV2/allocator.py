@@ -8,6 +8,7 @@ from . import PulsarREST, cfg, schema, game
 
 class Allocator:
     def __init__(self, balance, user="allocator"):
+        self.transnum = 0
         self.user = user
         self.balance = balance
         self.customer_offers = []
@@ -29,11 +30,17 @@ class Allocator:
                                                                  schema=pulsar.schema.JsonSchema(schema.TransactionSchema))
 
         # consumer - supply and customer offers
-        self.offer_consumer = self.client.subscribe(topic=re.compile(f"persistent://{cfg.tenant}/{cfg.namespace}/.*_offers"),
+        self.customer_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers",
                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema),
-                                                    subscription_name="offer-sub-2",
+                                                    subscription_name="customer-offer-sub-2",
                                                     initial_position=pulsar.InitialPosition.Latest,
-                                                    message_listener=self.offer_listener)
+                                                    message_listener=self.customer_offer_listener)
+
+        self.supplier_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers",
+                                                             schema=pulsar.schema.JsonSchema(schema.OfferSchema),
+                                                             subscription_name="supplier-offer-sub-2",
+                                                             initial_position=pulsar.InitialPosition.Latest,
+                                                             message_listener=self.supply_offer_listener)
 
         # subscribe - payouts
         self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
@@ -46,16 +53,19 @@ class Allocator:
         while True:
             time.sleep(0.1)
 
-    def offer_listener(self, consumer, msg):
+    def customer_offer_listener(self, consumer, msg):
         consumer.acknowledge(msg)
         self.logger.send(f"allocator: got a an offer with topic_name {msg.topic_name()}".encode("utf-8"))
+        self.customer_offers.append(msg.value())
+        self.allocate()
 
-        # see if customer or supply offers, then append to corresponding stack
-        if "customer" in msg.topic_name():
-            self.customer_offers.append(msg.value())
-        if "supply" in msg.topic_name():
-            self.supplier_offers.append(msg.value())
+    def supply_offer_listener(self, consumer, msg):
+        consumer.acknowledge(msg)
+        self.logger.send(f"allocator: got a an offer with topic_name {msg.topic_name()}".encode("utf-8"))
+        self.supplier_offers.append(msg.value())
+        self.allocate()
 
+    def allocate(self):
         # see if there is a match
         if len(self.customer_offers) > 0:
             num_replicas_needed = self.customer_offers[0].replicas
@@ -79,11 +89,25 @@ class Allocator:
 
     def payout_listener(self, consumer, msg):
         consumer.acknowledge(msg)
-        self.balance += msg.value().customerpay
+        self.balance += msg.value().allocatorpay
+        self.transnum += 1
         data = schema.TransactionSchema(
             user=self.user,
             change=msg.value().allocatorpay,
             balance=self.balance,
-            payoutid=msg.value().payoutid
+            payoutid=msg.value().payoutid,
+            transnum=self.transnum,
+            customer=msg.value().customer,
+            supplier=msg.value().supplier,
+            customerpay=msg.value().customerpay,
+            supplierpay=msg.value().supplierpay,
+            mediatorpay=msg.value().mediatorpay,
+            allocatorpay=msg.value().allocatorpay,
+            outcome=msg.value().outcome,
+            allocationid=msg.value().allocationid,
+            customerbehavior=msg.value().customerbehavior,
+            supplierbehavior=msg.value().supplierbehavior,
+            customerbehaviorprob=msg.value().customerbehaviorprob,
+            supplierbehaviorprob=msg.value().supplierbehaviorprob
         )
         self.transactions_producer.send(data)

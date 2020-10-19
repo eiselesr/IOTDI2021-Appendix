@@ -11,6 +11,7 @@ class Trader:
                  user,
                  balance,
                  behavior_probability):
+        self.transnum = 0
         self.user = user
         self.balance = balance
         self.behavior_probability = behavior_probability
@@ -53,11 +54,25 @@ class Trader:
             self.payout_consumer.acknowledge(msg)
             if msg.value().supplier == self.user:
                 self.balance += msg.value().supplierpay
+                self.transnum += 1
                 data = schema.TransactionSchema(
                     user=self.user,
-                    change=msg.value().supplierpay,
+                    change=msg.value().allocatorpay,
                     balance=self.balance,
-                    payoutid=msg.value().payoutid
+                    payoutid=msg.value().payoutid,
+                    transnum=self.transnum,
+                    customer=msg.value().customer,
+                    supplier=msg.value().supplier,
+                    customerpay=msg.value().customerpay,
+                    supplierpay=msg.value().supplierpay,
+                    mediatorpay=msg.value().mediatorpay,
+                    allocatorpay=msg.value().allocatorpay,
+                    outcome=msg.value().outcome,
+                    allocationid=msg.value().allocationid,
+                    customerbehavior=msg.value().customerbehavior,
+                    supplierbehavior=msg.value().supplierbehavior,
+                    customerbehaviorprob=msg.value().customerbehaviorprob,
+                    supplierbehaviorprob=msg.value().supplierbehaviorprob
                 )
                 self.transactions_producer.send(data)
                 break
