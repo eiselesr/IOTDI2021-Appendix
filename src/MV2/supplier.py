@@ -35,23 +35,32 @@ class Trader:
                                                      schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                      subscription_name=f"{self.user}-payouts-subscription",
                                                      initial_position=pulsar.InitialPosition.Latest,
-                                                     consumer_type=pulsar.ConsumerType.Exclusive,
-                                                     message_listener=self.payout_listener)
+                                                     consumer_type=pulsar.ConsumerType.Exclusive)
+
+        while True:
+            self.post_offer()
+            self.get_payout()
+            if self.balance <= 0:
+                break
+        self.close()
 
     def close(self):
         self.client.close()
 
-    def payout_listener(self, consumer, msg):
-        consumer.acknowledge(msg)
-        if msg.value().supplier == self.user:
-            self.balance += msg.value().supplierpay
-            data = schema.TransactionSchema(
-                user=self.user,
-                change=msg.value().supplierpay,
-                balance=self.balance,
-                payoutid=msg.value().payoutid
-            )
-            self.transactions_producer.send(data)
+    def get_payout(self):
+        while True:
+            msg = self.payout_consumer.receive()
+            self.payout_consumer.acknowledge(msg)
+            if msg.value().supplier == self.user:
+                self.balance += msg.value().supplierpay
+                data = schema.TransactionSchema(
+                    user=self.user,
+                    change=msg.value().supplierpay,
+                    balance=self.balance,
+                    payoutid=msg.value().payoutid
+                )
+                self.transactions_producer.send(data)
+                break
 
     def post_offer(self):
         offer = schema.OfferSchema(

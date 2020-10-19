@@ -4,46 +4,32 @@ import argparse
 from MV2 import *
 
 
-def run(user, start, end, behavior):
+def run(user, balance, behavior_probability):
     s = supplier.Trader(user=user,
-                        start=start,
-                        end=end,
-                        behavior=behavior)
+                        balance=float(balance),
+                        behavior_probability=float(behavior_probability))
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="supplier")
 
-    parser.add_argument("-s",
-                        "--start",
-                        help="start time",
-                        default="none")
-
-    parser.add_argument("-e",
-                        "--end",
-                        help="end time",
-                        default="none")
-
     parser.add_argument("-u",
                         "--user",
-                        help="tenant",
+                        help="user",
                         default="s1")
 
-    parser.add_argument("-b",
-                        "--behavior",
-                        help="correct or fail",
-                        default="correct")
+    parser.add_argument("-ba",
+                        "--balance",
+                        help="balance",
+                        default="100")
+
+    parser.add_argument("-p",
+                        "--behavior_probability",
+                        help="behavior probability",
+                        default="0.5")
 
     args = parser.parse_args()
 
-    if args.start=="none":
-        start = time.time() + 30
-    else:
-        start = float(args.start)
-
-    if args.end=="none":
-        end = start + 600
-    else:
-        end = float(args.end)
-
-    run(user=args.user, start=start, end=end, behavior=args.behavior)
+    run(user=args.user,
+        balance=args.balance,
+        behavior_probability=args.behavior_probability)

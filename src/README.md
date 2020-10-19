@@ -103,3 +103,27 @@ Questions:
 * Do we have to keep track of mediator in the game?
 * Single allocator ok?
 
+
+Vars
+Assuming each job is 10 minutes
+
+* lambda = 12000 (20fps * 600s)
+* n = 12 (lambda / theta)
+* replicas = 1
+* theta = 1000
+* pi_cc = 0.1 (smart contract gas function)
+* pi_v = 0.1
+* pi_a = 0.0000033
+* pi_cg = 7e-8 (based on price of electricty kwh using a beagle bone black, assuming process 20 inputs per second but processing 12 fps)
+* pi_se = 7e-8
+* pi_s = 0.00002 (breakeven = 0.00001667) (calculated from O1 scenario)
+* b = 0.000035 (breakeven = 0.00003334) (calculated from O1 scenario)
+* pi_cd = pi_s * theta
+* pi_m = 0.000033 (min breakeven=0.000021, max breakeven=0.000046)
+
+Simulation
+
+30 customers and 30 suppliers
+5 P(s) = 0, 5 at 20
+
+

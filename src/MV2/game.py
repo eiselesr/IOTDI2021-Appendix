@@ -21,7 +21,7 @@ pi_ve = 0.5
 pi_cg = 0.5
 
 # n: ?
-n = 0.5
+n = 10
 
 # pi_a: payout to the Allocator for providing an accepted allocation
 pi_a = 0.5
@@ -30,7 +30,13 @@ pi_a = 0.5
 pi_se = 0.5
 
 # theta
-theta = 0.5
+#theta = 0.5
+
+
+##### CONSTRAINTS #####
+# n < theta
+# supplier_behavior > 1/e_s = pi_cg / pi_s
+# theta = lam / n
 
 
 
@@ -42,21 +48,14 @@ theta = 0.5
 
 ##### DEPENDENT PARAMETERS #####
 
-def get_pi_se(pi_s, pi_se_sf):
-    # pi_se: cost to process a service input
-    return pi_s * pi_se_sf
+def get_theta(lam):
+    return lam / n
 
-
-def get_pi_mi(pi_s, pi_mi_sf):
-    # pi_mi: payout to mediator for mediating
-    return pi_s * pi_mi_sf
-
-
-def get_pi_sd(pi_s):
+def get_pi_sd(pi_s, theta):
     return pi_s * theta
 
 
-def get_pi_cd(pi_s):
+def get_pi_cd(pi_s, theta):
     return pi_s * theta
 
 
@@ -90,9 +89,9 @@ def get_customer_pay(v):
     elif (v["customerbehavior"] == "process") and (v['supplierbehavior'] == "cheat"):
         return -v['lam'] * v['pi_s'] - n * (pi_cg - pi_cc) - pi_a
     elif (v["customerbehavior"] == "cheat") and (v['supplierbehavior'] == "process"):
-        return v['lam'] * (v['b'] - v['pi_s']) - n * (pi_cc) - get_pi_cd(v['pi_s']) - pi_a
+        return v['lam'] * (v['b'] - v['pi_s']) - n * pi_cc - get_pi_cd(v['pi_s']) - pi_a
     elif (v["customerbehavior"] == "cheat") and (v['supplierbehavior'] == "cheat"):
-        return -v['lam'] * v['pi_s'] - n * pi_cc - get_pi_cd(v['pi_s'])- pi_a
+        return -v['lam'] * v['pi_s'] - n * pi_cc - get_pi_cd(v['pi_s']) - pi_a
     else:
         return None
 
