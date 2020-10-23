@@ -58,6 +58,15 @@ class TransactionSchema(pulsar.schema.Record):
     customerbehaviorprob = pulsar.schema.Float()
     supplierbehaviorprob = pulsar.schema.Float()
 
+class LastBalance(pulsar.schema.Record):
+    user = pulsar.schema.String()
+    balance = pulsar.schema.Float()
+    numjobs = pulsar.schema.Integer()
+    behaviorprob = pulsar.schema.Float()
+    entitytype = pulsar.schema.String()
+    namespace = pulsar.schema.String()
+    simnum = pulsar.schema.Integer()
+
 
 
 

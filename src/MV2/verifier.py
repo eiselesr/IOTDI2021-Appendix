@@ -7,7 +7,7 @@ from . import cfg, schema, PulsarREST, queries, game
 
 
 class Verifier:
-    def __init__(self, user="verifier"):
+    def __init__(self, user="verifier", namespace=None):
         self.user = user
         self.df_allocations = pd.DataFrame(columns=["customer",
                                                     "replicas",
@@ -19,6 +19,11 @@ class Verifier:
                                                     "customerbehaviorprob",
                                                     "supplierbehaviorprob"])
 
+        if namespace is None:
+            self.namespace = cfg.namespace
+        else:
+            self.namespace = namespace
+
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
 
@@ -27,11 +32,11 @@ class Verifier:
         self.logger.send(f"verifier-{self.user}: initializing".encode("utf-8"))
 
         # producer - payouts
-        self.payouts_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
+        self.payouts_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/payouts",
                                                             schema=pulsar.schema.JsonSchema(schema.PayoutSchema))
 
         # subscribe - allocations
-        self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
+        self.allocation_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/allocation_topic",
                                                          schema=pulsar.schema.JsonSchema(schema.AllocationSchema),
                                                          subscription_name=f"{self.user}-allocation-subscription",
                                                          initial_position=pulsar.InitialPosition.Latest,

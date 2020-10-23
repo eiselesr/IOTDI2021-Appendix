@@ -4,10 +4,11 @@ import argparse
 from MV2 import *
 
 
-def run(user, balance, behavior_probability):
+def run(user, balance, behavior_probability, namespace=None):
     s = supplier.Trader(user=user,
                         balance=float(balance),
-                        behavior_probability=float(behavior_probability))
+                        behavior_probability=float(behavior_probability),
+                        namespace=namespace)
 
 
 if __name__=="__main__":

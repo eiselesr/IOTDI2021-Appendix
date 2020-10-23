@@ -13,13 +13,30 @@ class Trader:
                  balance,
                  replicas,
                  behavior_probability,
-                 num_jobs):
+                 num_jobs,
+                 namespace=None,
+                 simnum=None,
+                 supplierprob=None):
         self.transnum = 0
         self.user = user
         self.balance = balance
         self.behavior_probability = behavior_probability
         self.replicas = replicas
         self.num_jobs = num_jobs
+
+        if namespace is None:
+            self.namespace = cfg.namespace
+        else:
+            self.namespace = namespace
+        if simnum is None:
+            self.simnum = -1
+        else:
+            self.simnum = simnum
+
+        if supplierprob is None:
+            self.supplierprob = -1
+        else:
+            self.supplierprob = supplierprob
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
@@ -29,31 +46,49 @@ class Trader:
         self.logger.send(f"customer-{self.user}: initializing".encode("utf-8"))
 
         # producer - customer_offers
-        self.customer_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers",
+        self.customer_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/customer_offers",
                                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
         # producer - transactions
-        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/transactions",
+        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/transactions",
                                                                 schema=pulsar.schema.JsonSchema(schema.TransactionSchema))
 
         # subscribe - payouts
-        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
+        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/payouts",
                                                      schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                      subscription_name=f"{self.user}-payouts-subscription",
                                                      initial_position=pulsar.InitialPosition.Latest,
                                                      consumer_type=pulsar.ConsumerType.Exclusive)
 
-        count = 0
-        while count < self.num_jobs:
+        self.count = 0
+        while self.count < self.num_jobs:
+            if self.count == self.num_jobs-1:
+                self.send_summary_message()
             self.post_offer()
             self.get_payout()
-            count += 1
-            if self.balance <= 0:
-                break
+            self.count += 1
+        # send simulation summary
+        #self.send_summary_message()
         self.close()
 
     def close(self):
         self.client.close()
+
+    def send_summary_message(self):
+        data = schema.LastBalance(
+            user=self.user,
+            balance=self.balance,
+            numjobs=self.count,
+            behaviorprob=self.behavior_probability,
+            entitytype="customer",
+            namespace=self.namespace,
+            simnum=self.simnum,
+            supplierprob=self.supplierprob
+        )
+        producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/last_balance",
+                                               schema=pulsar.schema.JsonSchema(schema.LastBalance))
+        producer.send(data)
+
 
     def get_payout(self):
         while True:
@@ -93,7 +128,7 @@ class Trader:
             customerbehavior=self.behavior(),
             supplierbehavior="NA",
             customerbehaviorprob=self.behavior_probability,
-            supplierbehaviorprob=-1.0
+            supplierbehaviorprob=-1.0,
         )
         self.customer_offers_producer.send(offer, properties={"content-type": "application/json"})
         self.logger.send(f"customer-{self.user}: sent job offer on with allocationid {allocationid}".encode("utf-8"))

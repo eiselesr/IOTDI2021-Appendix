@@ -4,8 +4,9 @@ import argparse
 from MV2 import *
 
 
-def run(user):
-    v = verifier.Verifier(user=user)
+def run(user, namespace=None):
+    v = verifier.Verifier(user=user,
+                          namespace=namespace)
 
 
 if __name__=="__main__":

@@ -3,8 +3,9 @@ import argparse
 from MV2 import *
 
 
-def run(balance):
-    a = allocator.Allocator(balance=float(balance))
+def run(balance, namespace=None):
+    a = allocator.Allocator(balance=float(balance),
+                            namespace=namespace)
 
 
 if __name__=="__main__":

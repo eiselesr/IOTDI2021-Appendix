@@ -10,11 +10,17 @@ class Trader:
     def __init__(self,
                  user,
                  balance,
-                 behavior_probability):
+                 behavior_probability,
+                 namespace=None):
         self.transnum = 0
         self.user = user
         self.balance = balance
         self.behavior_probability = behavior_probability
+
+        if namespace is None:
+            self.namespace = cfg.namespace
+        else:
+            self.namespace = namespace
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
@@ -24,15 +30,15 @@ class Trader:
         self.logger.send(f"supplier-{self.user}: initializing".encode("utf-8"))
 
         # producer - supply offers
-        self.supply_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers",
+        self.supply_offers_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/supply_offers",
                                                                   schema=pulsar.schema.JsonSchema(schema.OfferSchema))
 
         # producer - transactions
-        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/transactions",
+        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/transactions",
                                                                  schema=pulsar.schema.JsonSchema(schema.TransactionSchema))
 
         # subscribe - payouts
-        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
+        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/payouts",
                                                      schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                      subscription_name=f"{self.user}-payouts-subscription",
                                                      initial_position=pulsar.InitialPosition.Latest,
@@ -41,8 +47,6 @@ class Trader:
         while True:
             self.post_offer()
             self.get_payout()
-            if self.balance <= 0:
-                break
         self.close()
 
     def close(self):

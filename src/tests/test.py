@@ -1,7 +1,7 @@
 import pulsar
 import threading
 import time
-import uuid
+import random
 from MV2 import PulsarREST, cfg
 from bin import app_allocator, app_customer, app_supplier, app_verifier
 
@@ -11,6 +11,8 @@ tenant = "public"
 NUM_EACH = 5
 SUPPLIER_PROBS = [0.0 for x in range(NUM_EACH)] + [0.2 for x in range(NUM_EACH)] + [0.4 for x in range(NUM_EACH)] + [0.6 for x in range(NUM_EACH)] + [0.8 for x in range(NUM_EACH)] + [1.0 for x in range(NUM_EACH)]
 CUSTOMER_PROBS = [0.0 for x in range(NUM_EACH)] + [0.2 for x in range(NUM_EACH)] + [0.4 for x in range(NUM_EACH)] + [0.6 for x in range(NUM_EACH)] + [0.8 for x in range(NUM_EACH)] + [1.0 for x in range(NUM_EACH)]
+random.shuffle(SUPPLIER_PROBS)
+random.shuffle(CUSTOMER_PROBS)
 NUMJOBS = 100
 REPLICAS = 1
 START_BALANCE = float(1000)

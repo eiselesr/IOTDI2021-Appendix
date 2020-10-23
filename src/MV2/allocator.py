@@ -7,12 +7,17 @@ from . import PulsarREST, cfg, schema, game
 
 
 class Allocator:
-    def __init__(self, balance, user="allocator"):
+    def __init__(self, balance, user="allocator", namespace=None):
         self.transnum = 0
         self.user = user
         self.balance = balance
         self.customer_offers = []
         self.supplier_offers = []
+
+        if namespace is None:
+            self.namespace = cfg.namespace
+        else:
+            self.namespace = namespace
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
@@ -22,28 +27,28 @@ class Allocator:
         self.logger.send(f"allocator: initializing".encode("utf-8"))
 
         # producer - allocation
-        self.allocation_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/allocation_topic",
+        self.allocation_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/allocation_topic",
                                                                schema=pulsar.schema.JsonSchema(schema.AllocationSchema))
 
         # producer - transactions
-        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/transactions",
+        self.transactions_producer = self.client.create_producer(topic=f"persistent://{cfg.tenant}/{self.namespace}/transactions",
                                                                  schema=pulsar.schema.JsonSchema(schema.TransactionSchema))
 
         # consumer - supply and customer offers
-        self.customer_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/customer_offers",
+        self.customer_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/customer_offers",
                                                     schema=pulsar.schema.JsonSchema(schema.OfferSchema),
                                                     subscription_name="customer-offer-sub-2",
                                                     initial_position=pulsar.InitialPosition.Latest,
                                                     message_listener=self.customer_offer_listener)
 
-        self.supplier_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/supply_offers",
+        self.supplier_offer_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/supply_offers",
                                                              schema=pulsar.schema.JsonSchema(schema.OfferSchema),
                                                              subscription_name="supplier-offer-sub-2",
                                                              initial_position=pulsar.InitialPosition.Latest,
                                                              message_listener=self.supply_offer_listener)
 
         # subscribe - payouts
-        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{cfg.namespace}/payouts",
+        self.payout_consumer = self.client.subscribe(topic=f"persistent://{cfg.tenant}/{self.namespace}/payouts",
                                                      schema=pulsar.schema.JsonSchema(schema.PayoutSchema),
                                                      subscription_name=f"{self.user}-payouts-subscription",
                                                      initial_position=pulsar.InitialPosition.Latest,

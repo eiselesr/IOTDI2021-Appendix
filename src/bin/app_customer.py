@@ -8,12 +8,18 @@ def run(user,
         balance,
         replicas,
         behavior_probability,
-        num_jobs):
+        num_jobs,
+        namespace=None,
+        simnum=None,
+        supplierprob=None):
     c = customer.Trader(user=user,
                         balance=float(balance),
                         replicas=int(replicas),
                         behavior_probability=float(behavior_probability),
-                        num_jobs=int(num_jobs))
+                        num_jobs=int(num_jobs),
+                        namespace=namespace,
+                        simnum=simnum,
+                        supplierprob=supplierprob)
 
 
 if __name__=="__main__":
