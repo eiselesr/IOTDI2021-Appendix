@@ -49,9 +49,11 @@ class Allocator:
             if len(self.supplier_offers) >= num_replicas_needed:
                 customer = self.customer_offers.pop(0)
                 suppliers = []
+                supplierofferids = []
                 for i in range(customer.replicas):
                     supplier = self.supplier_offers.pop(0)
                     suppliers.append(supplier.user)
+                    supplierofferids.append(supplier.offerid)
                 allocation = schema.AllocationSchema(
                     jobid=customer.jobid,
                     allocationid=customer.allocationid,
@@ -62,7 +64,9 @@ class Allocator:
                     service_name=customer.service_name,
                     price=customer.price,
                     replicas=customer.replicas,
-                    timestamp=time.time())
+                    timestamp=time.time(),
+                    customerofferid=customer.offerid,
+                    supplierofferids=supplierofferids)
                 self.allocation_producer.send(allocation)
                 self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {suppliers}".encode("utf-8"))
 

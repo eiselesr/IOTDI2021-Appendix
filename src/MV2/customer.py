@@ -110,7 +110,8 @@ class Trader:
             price=self.price,
             replicas=self.replicas,
             timestamp=time.time(),
-            allocationid=allocationid
+            allocationid=allocationid,
+            offerid=str(uuid.uuid4())
         )
         self.customer_offers_producer.send(offer, properties={"content-type": "application/json"})
         self.logger.send(f"customer-{self.user}: sent job offer on service_name: {self.service_name}, jobid: {self.jobid}, allocationid: {allocationid}".encode("utf-8"))

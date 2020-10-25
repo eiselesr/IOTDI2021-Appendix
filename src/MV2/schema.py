@@ -14,6 +14,7 @@ class OfferSchema(pulsar.schema.Record):
     replicas = pulsar.schema.Integer()
     timestamp = pulsar.schema.Float()
     allocationid = pulsar.schema.String()
+    offerid = pulsar.schema.String()
 
 
 class AllocationSchema(pulsar.schema.Record):
@@ -27,6 +28,8 @@ class AllocationSchema(pulsar.schema.Record):
     price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
     timestamp = pulsar.schema.Float()
+    supplierofferid = pulsar.schema.String()
+    supplierofferids = pulsar.schema.Array(pulsar.schema.String())
 
 
 class CheckSchema(pulsar.schema.Record):

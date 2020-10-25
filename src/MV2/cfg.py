@@ -6,4 +6,4 @@ presto_port = 8081
 tenant = "public"
 namespace = "default"
 logger_topic = "logger2"
-window = 30
+window = 60

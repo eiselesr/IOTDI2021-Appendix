@@ -37,9 +37,10 @@ class Verifier:
 
         # periodically check for expired allocations
         while True:
-            t = threading.Thread(target=self.flush_allocations)
-            t.start()
-            t.join()
+            time.sleep(0.1)
+            #t = threading.Thread(target=self.flush_allocations)
+            #t.start()
+            #t.join()
 
     def allocation_listener(self, consumer, msg):
         consumer.acknowledge(msg)
@@ -55,11 +56,11 @@ class Verifier:
                 "replicas": msg.value().replicas,
                 "timestamp": msg.value().timestamp}
         self.df_allocations = self.df_allocations.append(data, ignore_index=True)
+        self.flush_allocations()
 
     def flush_allocations(self):
-        time.sleep(10)
         df = deepcopy(self.df_allocations)
-        expired_allocations = df.loc[df['end'] < time.time()+11]
+        expired_allocations = df.loc[df['end'] < time.time()+3]
         if len(expired_allocations) > 0:
             for k, allocation in expired_allocations.iterrows():
                 self.verify(allocation)

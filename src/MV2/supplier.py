@@ -3,6 +3,7 @@ import json
 import datetime
 import pulsar
 import random
+import uuid
 from . import PulsarREST, cfg, schema
 
 
@@ -126,7 +127,8 @@ class Trader:
             price=self.price,
             replicas=-1,
             timestamp=time.time(),
-            allocationid="NA"
+            allocationid="NA",
+            offerid=str(uuid.uuid4())
         )
         self.supply_offers_producer.send(offer, {"content-type": "application/json"})
         self.logger.send(f"supplier-{self.user}: sent an offer".encode("utf-8"))
