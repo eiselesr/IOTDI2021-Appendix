@@ -11,13 +11,18 @@ the pulsar team.
 ```bash
 cd <MODiCuM-Streaming>
 wget https://archive.apache.org/dist/pulsar/pulsar-2.6.1/apache-pulsar-2.6.1-bin.tar.gz
+tar -xzvf apache-pulsar-2.6.1-bin.tar.gz
 cd apache-pulsar-2.6.1
 
-# start pulsar standalone
+# pulsar standalone
+rm -rf data
 bin/pulsar-daemon start standalone
+bin/pulsar-daemon stop standalone
+bin/pulsar standalone
 
-# start Presto SQL worker
+# Presto
 bin/pulsar sql-worker start
+bin/pulsar sql-worker stop
 ```
 
 ### 1.2: Pulsar Docker
@@ -67,3 +72,59 @@ python app.py \
 
 The second way to get results is to use the jupyter notebook in <MODiCuM-Streaming>/notebooks/pulsar_sql.ipynb
 to query topics to see all messages on that topic.
+
+
+## 4. Game
+
+Constraints
+* b x lam > all costs
+* pi_s * lam > pi_se * lam + pi_a
+
+Input params
+* b: benefit to customer - distribution
+* lam: number of inputs in a job - distribution
+* pi_s: payout to supplier - distribution 
+
+Dependent params (function)
+* pi_se: cost to process a service input - pi_s * pi_se_sf
+* pi_mi: payout to mediator for mediating - pi_s * pi_mi_sf
+* pi_sd: security deposit for supplier - (01 - 03) * scaling_factor
+* pi_cd: security deposit for customer - pi_cg * scaling factor
+
+Static params
+* pi_se_sf: scaling factor 
+* pi_mi_sf: scaling factor
+* pi_cg: cost to customer for generating n inputs
+* pi_cc: cost to customer for commiting n inputs to bc
+* pi_a: payout to allocator
+* pi_m: payout to mediator
+* pi_sc: cost to supplier for sending n inputs to bc
+* pr: penalty rate
+
+Questions:
+
+* Do we have to keep track of mediator in the game?
+* Single allocator ok?
+
+
+Vars
+Assuming each job is 10 minutes
+
+* lambda = 12000 (20fps * 600s)
+* n = 12 (lambda / theta)
+* replicas = 1
+* theta = 1000
+* pi_cc = 0.1 (smart contract gas function)
+* pi_v = 0.1
+* pi_a = 0.0000033
+* pi_cg = 7e-8 (based on price of electricty kwh using a beagle bone black, assuming process 20 inputs per second but processing 12 fps)
+* pi_se = 7e-8
+* pi_s = 0.00002 (breakeven = 0.00001667) (calculated from O1 scenario)
+* b = 0.000035 (breakeven = 0.00003334) (calculated from O1 scenario)
+* pi_cd = pi_s * theta
+* pi_m = 0.000033 (min breakeven=0.000021, max breakeven=0.000046)
+
+Simulation
+
+30 customers and 30 suppliers
+5 P(s) = 0, 5 at 20

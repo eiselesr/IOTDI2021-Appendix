@@ -5,8 +5,8 @@ import uuid
 from bin import app_allocator, app_customer, app_supplier, app_verifier
 
 
-NUM_SUPPLIERS = 5
-NUM_CUSTOMERS = 5
+NUM_SUPPLIERS = 20
+NUM_CUSTOMERS = 20
 SIMNUM = 1
 
 if __name__=="__main__":

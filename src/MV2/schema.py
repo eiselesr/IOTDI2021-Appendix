@@ -28,8 +28,10 @@ class AllocationSchema(pulsar.schema.Record):
     price = pulsar.schema.Float()
     replicas = pulsar.schema.Integer()
     timestamp = pulsar.schema.Float()
-    supplierofferid = pulsar.schema.String()
+    customerofferid = pulsar.schema.String()
     supplierofferids = pulsar.schema.Array(pulsar.schema.String())
+    customeroffertimestamp = pulsar.schema.Float()
+    supplieroffertimestamps = pulsar.schema.Array(pulsar.schema.Float())
 
 
 class CheckSchema(pulsar.schema.Record):
@@ -62,7 +64,8 @@ class OutputDataSchema(pulsar.schema.Record):
     end = pulsar.schema.Float()
     supplier = pulsar.schema.String()
     allocationid = pulsar.schema.String()
-    timestamp = pulsar.schema.Float()
+    customertimestamp = pulsar.schema.Float()
+    suppliertimestamp = pulsar.schema.Float()
     msgnum = pulsar.schema.Integer()
 
 

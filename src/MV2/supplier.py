@@ -77,7 +77,7 @@ class Trader:
             input_consumer = self.client.subscribe(topic=f"persistent://{allocation.value().customer}/{allocation.value().service_name}/input",
                                                    schema=pulsar.schema.JsonSchema(schema.InputDataSchema),
                                                    subscription_name=f"{self.user}-input-{allocation.value().service_name}-{allocation.value().allocationid}",
-                                                   initial_position=pulsar.InitialPosition.Earliest,
+                                                   initial_position=pulsar.InitialPosition.Latest,
                                                    consumer_type=pulsar.ConsumerType.Exclusive)
 
             # process messages until allocation is finished
@@ -96,7 +96,8 @@ class Trader:
                             end=allocation.value().end,
                             supplier=self.user,
                             allocationid=allocation.value().allocationid,
-                            timestamp=msg.value().timestamp,
+                            customertimestamp=msg.value().timestamp,
+                            suppliertimestamp=time.time(),
                             msgnum=msg.value().msgnum
                         )
                         output_producer.send(output_data, properties={"content-type": "application/json"})

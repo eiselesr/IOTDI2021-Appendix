@@ -5,5 +5,5 @@ presto_host = "localhost"
 presto_port = 8081
 tenant = "public"
 namespace = "default"
-logger_topic = "logger2"
+logger_topic = "logger"
 window = 60

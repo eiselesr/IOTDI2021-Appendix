@@ -77,7 +77,7 @@ class Trader:
                 )
                 self.input_producer.send(data, properties={"content-type": "application/json"})
                 count += 1
-            time.sleep(1)
+            time.sleep(.05)
         self.logger.send(f"customer-{self.user}: done sending data for service_name: {self.service_name}, jobid: {self.jobid}".encode("utf-8"))
         self.input_producer.close()
 
@@ -94,6 +94,7 @@ class Trader:
             allocationid = str(uuid.uuid4())
             self.post_offer(allocationid, window_start, window_end)
             window_start = deepcopy(window_end)
+            time.sleep(2.3)
         self.logger.send(f"customer-{self.user}: done sending offers on service_name: {self.service_name}, jobid: {self.jobid}".encode("utf-8"))
         print(f"customer-{self.user}: done sending all offers")
 
