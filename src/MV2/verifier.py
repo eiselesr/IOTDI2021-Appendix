@@ -18,7 +18,8 @@ class Verifier:
                                                     'service_name',
                                                     'price',
                                                     'replicas',
-                                                    'timestamp'])
+                                                    'timestamp',
+                                                    'supplierbehaviors'])
 
         # pulsar client
         self.client = pulsar.Client(cfg.pulsar_url)
@@ -54,7 +55,8 @@ class Verifier:
                 "service_name": msg.value().service_name,
                 "price": msg.value().price,
                 "replicas": msg.value().replicas,
-                "timestamp": msg.value().timestamp}
+                "timestamp": msg.value().timestamp,
+                "supplierbehaviors": msg.value().supplierbehaviors}
         self.df_allocations = self.df_allocations.append(data, ignore_index=True)
         self.flush_allocations()
 
@@ -84,14 +86,16 @@ class Verifier:
         producer = self.client.create_producer(topic="persistent://{}/{}/check".format(allocation['customer'], allocation['service_name']),
                                                schema=pulsar.schema.JsonSchema(schema.CheckSchema))
         data = schema.CheckSchema(
-            result = result,
+            result=result,
             customer=allocation['customer'],
             suppliers=allocation['suppliers'],
             service_name=allocation['service_name'],
             jobid=allocation['jobid'],
             allocationid=allocation['allocationid'],
-            timestamp=time.time()
+            timestamp=time.time(),
+            supplierbehaviors=allocation['supplierbehaviors']
         )
         producer.send(data)
         producer.close()
+        self.logger.send(f"verifier-{self.user}: send to check topic".encode("utf-8"))
 

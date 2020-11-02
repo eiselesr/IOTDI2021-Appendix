@@ -1,1 +1,1 @@
-from . import customer, cfg, supplier, allocator, verifier
+from . import customer, cfg, supplier, allocator, verifier, mediator

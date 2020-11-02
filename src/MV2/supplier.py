@@ -129,7 +129,8 @@ class Trader:
             replicas=-1,
             timestamp=time.time(),
             allocationid="NA",
-            offerid=str(uuid.uuid4())
+            offerid=str(uuid.uuid4()),
+            supplierbehavior=self.behavior
         )
         self.supply_offers_producer.send(offer, {"content-type": "application/json"})
         self.logger.send(f"supplier-{self.user}: sent an offer".encode("utf-8"))

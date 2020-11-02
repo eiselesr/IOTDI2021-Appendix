@@ -92,11 +92,13 @@ class Allocator:
                 suppliers = []
                 supplierofferids = []
                 supplieroffertimestamps = []
+                supplierbehaviors = []
                 for i in range(customer.replicas):
                     supplier = self.supplier_offers.pop(0)
                     suppliers.append(supplier.user)
                     supplierofferids.append(supplier.offerid)
                     supplieroffertimestamps.append(supplier.timestamp)
+                    supplierbehaviors.append(supplier.supplierbehavior)
                 allocation = schema.AllocationSchema(
                     jobid=str(customer.jobid),
                     allocationid=str(customer.allocationid),
@@ -111,7 +113,8 @@ class Allocator:
                     customerofferid=customer.offerid,
                     supplierofferids=supplierofferids,
                     customeroffertimestamp=float(customer.timestamp),
-                    supplieroffertimestamps=supplieroffertimestamps)
+                    supplieroffertimestamps=supplieroffertimestamps,
+                    supplierbehaviors=supplierbehaviors)
                 self.allocation_producer.send(allocation)
                 self.logger.send(f"allocator: allocated job {customer.allocationid}, customer {customer.user} and suppliers {suppliers}".encode("utf-8"))
             else:
