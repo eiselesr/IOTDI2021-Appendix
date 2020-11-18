@@ -3,7 +3,7 @@ import threading
 import time
 import uuid
 import random
-from bin import app_allocator, app_customer, app_supplier, app_verifier
+from bin import app_allocator, app_customer, app_supplier, app_verifier, app_mediator
 
 
 NUM_SUPPLIERS = 30
@@ -12,6 +12,7 @@ SIMNUM = 1
 service_name = "rand_nums"
 
 if __name__=="__main__":
+    # start allocator
     threads = []
     a = threading.Thread(target=app_allocator.run)
     threads.append(a)
@@ -23,34 +24,31 @@ if __name__=="__main__":
     threads.append(v)
     v.start()
 
-    time.sleep(10)
+    # start mediator
+    time.sleep(5)
+    m = threading.Thread(target=app_mediator.run, args=(f"m{SIMNUM}",))
+    m.start()
 
-    start = time.time() + 30
-    end = start + 1000
+    time.sleep(2)
+    start = time.time() + 120
+    end = start + 800
+    for i in range(NUM_SUPPLIERS):
+        user = f"s-{SIMNUM}-{i}"
+        behavior = "correct"
+        t = threading.Thread(target=app_supplier.run, args=(user, start, end, behavior))
+        threads.append(t)
+        t.start()
+    print("done starting suppliers at time {}".format(time.time()))
 
-    suppliers_all, customers_all = [], []
-    supplier_count, customer_count = 0, 0
-    while (supplier_count < NUM_SUPPLIERS) or (customer_count < NUM_CUSTOMERS):
-        entity = random.choice(['customer', 'supplier'])
-        if (entity == 'customer') and (customer_count < NUM_CUSTOMERS):
-            user = f"c-{SIMNUM}-{customer_count}"
-            jobid = str(uuid.uuid4())
-            replicas = 1
-            c = threading.Thread(target=app_customer.run, args=(jobid, start, end, service_name, user, replicas))
-            threads.append(c)
-            c.start()
-            customer_count += 1
-            customers_all.append(user)
-        elif (entity == "supplier") and (supplier_count < NUM_SUPPLIERS):
-            user = f"s-{SIMNUM}-{supplier_count}"
-            behavior = "correct"
-            t = threading.Thread(target=app_supplier.run, args=(user, start, end, behavior))
-            threads.append(t)
-            t.start()
-            supplier_count += 1
-            suppliers_all.append(user)
+    # start customers
+    time.sleep(1)
+    for i in range(NUM_CUSTOMERS):
+        #time.sleep(1)
+        jobid = str(uuid.uuid4())
+        user = f"c-{SIMNUM}-{i}"
+        replicas = 1
+        c = threading.Thread(target=app_customer.run, args=(jobid, start, end, service_name, user, replicas))
+        threads.append(c)
+        c.start()
+
     print(f"system started at: {time.time()}")
-    print("all suppliers: {}".format(suppliers_all))
-    print("......")
-    print("all customers: {}".format(customers_all))
-    print("......")

@@ -37,7 +37,7 @@ pulsar each time you run a similation, just make sure you use a new SIMNUM for a
 
 ```bash
 cd <MODiCuM-Streaming>/src
-python tests/test.py
+python tests/runtimetest.py
 ```
 
 ## 3. Get Simulation Results
